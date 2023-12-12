@@ -245,5 +245,5 @@ source("06.phylosignals-trait-evaluation.R", local = knitr::knit_global())
 ### Step 7: Supplementary S2 - Model summary
 
 ``` r
-source("07.suppl.Rmd", local = knitr::knit_global())
+source("Haehn_et.al_2023_sPlot-project#46_S2.Rmd", local = knitr::knit_global())
 ```

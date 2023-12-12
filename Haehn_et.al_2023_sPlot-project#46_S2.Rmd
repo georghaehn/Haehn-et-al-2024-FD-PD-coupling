@@ -1,0 +1,552 @@
+---
+title: "Supplementary S2\nFunctional diversity is decoupled from phylogenetic diversity across plant communities, reflecting biogeographic and climatic history."
+output: 
+  word_document:
+    reference_docx: ref.docx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library("tidyverse")
+library("mgcv")
+library("performance")
+library("dismo")
+library("gbm")
+library("googlesheets4")
+library("tidyr")
+
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+
+gs4_auth()
+
+authors <- read_sheet("https://docs.google.com/spreadsheets/XXXXXXXXXXXX", sheet = "Affiliations")
+
+authors <- authors %>% 
+  mutate(
+  Affiliation1 = ifelse(!is.na(`Affiliation 1`), paste0(`Affiliation 1`, ", ", `Address 1`), NA),
+  Affiliation2 = ifelse(!is.na(`Affiliation 2`), paste0(`Affiliation 2`, ", ", `Address 2`), NA),
+  Affiliation3 = ifelse(!is.na(`Affiliation 3`), paste0(`Affiliation 3`, ", ", `Address 3`), NA)
+  ) %>% 
+  dplyr::select(Affiliation1, Affiliation2, Affiliation3, Name, Mail, ORCID)
+
+
+# Get affiliations while keeping the original author order
+affil <- gather(authors, key = "Level", value = "Affiliation", -c(Name, Mail, ORCID)) %>% 
+  filter(stringr::str_detect(Level, "Affil")) %>% 
+  arrange(match(Name, authors$Name))
+
+affil_order <- data.frame(Affiliation = na.omit(unique(affil$Affiliation)),
+                          Number = 1:length(na.omit(unique(affil$Affiliation))))
+
+authors_numbers = affil %>% 
+  right_join(affil_order %>% na.omit(), by = "Affiliation") %>% 
+  group_by(Name) %>% 
+  summarize(Affil = paste(Number, collapse = ",")) %>% 
+  arrange(match(Name, authors$Name))
+
+
+authorlist <- ""
+
+for (i in 1:length(authors_numbers$Name)) {
+
+  str <- paste0(authors_numbers[i, "Name"], "^", ifelse(i == 1, paste0(authors_numbers[i, "Affil"], ",\\*"), 
+                                                        authors_numbers[i, "Affil"]), 
+                       "^", ifelse(i == length(authors_numbers$Name), "",  ", "), sep = "")
+  authorlist <- paste0(authorlist, str, sep = "")
+}
+
+affillist <- "\\* Corresponding author   \n   \n"
+
+for (i in 1:length(affil_order$Affiliation)) {
+  a <- paste0("^", affil_order[i, "Number"], "^", " ", affil_order[i, "Affiliation"], sep = "\n")
+  affillist <- paste0(affillist, a)
+}
+
+```
+`r authorlist`
+
+<!-- ```{r, results='asis', echo=FALSE} -->
+<!-- mycat <- function(text){ -->
+<!--   cat(gsub(pattern = "\n", replacement = "  \n", x = text)) -->
+<!-- } -->
+<!-- mycat(affillist) -->
+<!-- ``` -->
+
+## Figure 2
+
+### Figure 2 A
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ SES.RQEP + s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+mod1 <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/04.GAM-SES-RQEF-RQEP.Rds")
+
+summary(mod1)
+
+#check_model(mod1)
+
+rm(list = ls())
+```
+
+## Figure 3
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+gbm.step(data = sPlot.data,
+         gbm.x = "PC1",
+                 "PC2",
+                 "PC3",
+                 "PC4",
+                 "PC5",
+                 "plot.size", "Plants recorded", #data bias
+                 "sBiome", "is.forest", #Vegetation type
+                 "stable.clim" #Longterm climate stability (LGM)
+                 ),
+         gbm.y = "SES.RQEP", # OR "SES.RQEF"
+         family = "gaussian",
+         tree.complexity = 5,
+         learning.rate = 0.01,
+         bag.fraction = 0.5,
+         max.trees = 20000,
+         silent = F)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+BRT.SES.FD <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/eve-calculations/BRT-calculation/04.BRT-results-SES.RQEF.RDS")
+
+summary(BRT.SES.FD)
+
+BRT.SES.PD <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/eve-calculations/BRT-calculation/04.BRT-results-SES.RQEP.RDS")
+
+summary(BRT.SES.PD)
+
+rm(list = ls())
+```
+
+## Figure 4
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ stable.clim + PC2 + PC3 + PC5 + plot.size + is.forest +
+            s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.FD.complete <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/eve-calculations/GAM-expl/05.GAM_SES.RQEF-exp.RDS")
+
+summary(mod.FD.complete)
+
+#check_model(mod.FD.complete)
+
+rm(list = ls())
+
+```
+
+### Figure 4 A
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ PC2 + PC3 + PC5 + plot.size + is.forest+ s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+mod.PD.SC <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEF-exp_1.RDS")
+
+summary(mod.PD.SC)
+
+rm(list = ls())
+```
+
+### Figure 4 B
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ stable.clim + PC3 + PC5 + plot.size + is.forest +
+            s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.FD.PC2 <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEF-exp_2.RDS")
+
+summary(mod.FD.PC2)
+
+rm(list = ls())
+```
+
+### Figure 4 C
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ stable.clim + PC2 + PC5 + plot.size + is.forest +
+            s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.FD.PC3 <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEF-exp_3.RDS")
+
+summary(mod.FD.PC3)
+
+rm(list = ls())
+```
+
+### Figure 4 D
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ stable.clim + PC2 + PC3 + plot.size + is.forest +
+            s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.FD.PC5 <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEF-exp_4.RDS")
+
+summary(mod.FD.PC5)
+
+rm(list = ls())
+```
+
+### Figure 4 E
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ stable.clim + PC2 + PC3 + PC5 + is.forest +
+            s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.FD.PS <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEF-exp_5.RDS")
+
+summary(mod.FD.PS)
+
+rm(list = ls())
+```
+
+### Figure 4 F
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ stable.clim + PC2 + PC3 + PC5 + plot.size +
+            s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.FD.for <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEF-exp_6.RDS")
+
+summary(mod.FD.for)
+
+rm(list = ls())
+```
+
+### Figure 4 G
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEF ~ 1 + s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.FD.SP <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEF-exp_7.RDS")
+
+summary(mod.FD.SP)
+
+rm(list = ls())
+```
+
+## Figure 5
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEP ~ PC1 + is.forest + s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+
+mod.PD.complete <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/eve-calculations/GAM-expl/05.GAM_SES.RQEP-exp.RDS")
+
+summary(mod.PD.complete)
+
+#check_model(mod.PD.complete)
+
+rm(list = ls())
+
+```
+
+### Figure 5 A
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEP ~ is.forest + s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+mod.PD.PC1 <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEP-exp_1.RDS")
+
+summary(mod.PD.PC1)
+
+rm(list = ls())
+```
+
+### Figure 5 B
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEP ~ PC1 + s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+mod.PD.for <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEP-exp_2.RDS")
+
+summary(mod.PD.for)
+
+rm(list = ls())
+```
+
+### Figure 5 C
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.RQEP ~ 1 + s(Longitude, Latitude, bs = "sos"),
+          family = "gaussian",
+          method = "REML",
+          data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+mod.PD.sp <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/05.GAM_SES.RQEP-exp_3.RDS")
+
+summary(mod.PD.sp)
+
+rm(list = ls())
+```
+
+## Figure S 1
+
+### Figure S 1 A
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(FD ~ PD + s(Longitude, Latitude, bs = "sos"),
+                    family = "gaussian",
+                    method = "REML",
+                    data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+modS1A <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/04.GAM-RQEF-RQEP.Rds")
+
+summary(modS1A)
+
+#check_model(modS1A)
+
+rm(list = ls())
+```
+
+### Figure S 1 B
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(FD ~ PD.sqrt + s(Longitude, Latitude, bs = "sos"),
+                    family = "gaussian",
+                    method = "REML",
+                    data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+modS1B <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/04.GAM-RQEF-RQEP.sqrt.Rds")
+
+summary(modS1B)
+
+#check_model(modS1B)
+
+rm(list = ls())
+```
+
+### Figure S 1 C
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(SES.FD ~ SES.PD.sqrt + s(Longitude, Latitude, bs = "sos"),
+                    family = "gaussian",
+                    method = "REML",
+                    data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+modS1C <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/04.GAM-SES-RQEF-RQEP.sqrt.Rds")
+
+summary(modS1C)
+
+#check_model(modS1C)
+
+rm(list = ls())
+```
+
+### Figure S 1 D
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+mgcv::gam(FD ~ 1 + s(Longitude, Latitude, bs = "sos"),
+                    family = "gaussian",
+                    method = "REML",
+                    data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+modS1D <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/04.GAM-RQEF-RQEP.Smooth.Rds")
+
+summary(modS1D)
+
+#check_model(modS1C)
+
+rm(list = ls())
+```
+
+## Figure S 7
+
+### Figure S 7 A
+
+#### Model structure
+
+```{r, echo=TRUE, eval=FALSE}
+
+indices <- c(
+    "PDQ",
+    "FDQ.ALL",
+    "FDQ.SLA",
+    "FDQ.HEIGHT",
+    "FDQ.ROOT",
+    "FDQ.SM",
+    "FDQ.LDMC",
+    "FDQ.N",
+    "FDQ.P",
+    "FDQ.CHRO.PA")
+
+mgcv::gam(indices[i] ~ PDQ.PA + s(Longitude, Latitude, bs = "sos"),
+                    family = "gaussian",
+                    method = "REML",
+                    data = data.wgs)
+```
+
+#### Summary
+
+```{r, echo = FALSE,comment=NA}
+models <- readRDS("~/09.projects/2022/09.sPlot-project-FD-PD/02.data/sPlotOpen-PA-GAMS.Rds")
+
+blanks <- rep(c(' ', '\n'),3) # This will print five blank lines between plots.
+
+AddBreak <- function() {
+for (i in blanks)
+  cat(i)
+}
+
+for(i in 1:length(models)) {
+  print(summary(models[[i]]))
+  AddBreak()
+}
+
+rm(list = ls())
+```

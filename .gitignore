@@ -1,0 +1,29 @@
+# ignore all office documents
+# Powerpoint
+*.pptx
+
+~$*.pptx*
+
+
+# Word
+*.docx
+~$*.docx*
+*.doc
+~$*.doc*
+
+# Excel
+*.xlsx
+~$*.xlsx*
+
+# Ignore images
+
+*.png
+*.tiff
+*.jpeg
+
+# ignore R management files
+*.Rproj.user/
+*.Rproj
+*.Rhistory
+.Rproj.user
+node_modules/

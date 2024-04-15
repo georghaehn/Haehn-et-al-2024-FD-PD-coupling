@@ -13,7 +13,85 @@ library("viridis")
 library("dggridR")
 library("scales")
 
-sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-data.RDS")
+sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-PCA-BW-data.RDS")
+
+#### Fig 2 ----
+
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+dat <- sPlot.data %>%
+  filter(!is.na(SES.RQEP.BW),
+         !is.na(SES.RQEF.BW)) %>% 
+  mutate(SES.RQEP.BW = range01(SES.RQEP.BW),
+         SES.RQEF.BW = range01(SES.RQEF.BW)) %>% 
+  mutate(SES.RQEP.BW = ifelse(SES.RQEP.BW == 0, 0.001, SES.RQEP.BW),
+         SES.RQEF.BW = ifelse(SES.RQEF.BW == 0, 0.001, SES.RQEF.BW)) %>%
+  mutate(rel.BW = SES.RQEF.BW/SES.RQEP.BW) %>%
+  mutate(rel.log.BW = log(rel.BW))
+
+
+#Construct a global grid
+dggs <- dgconstruct(area=50*50, metric=T, resround='down')
+
+dat$cell <- dgGEO_to_SEQNUM(dggs, dat$Longitude, dat$Latitude)$seqnum
+
+d.log <- dat %>% 
+  filter(quantile(rel.log.BW, 0.05) <= rel.log.BW,
+         rel.log.BW <= quantile(rel.log.BW, 0.95) ) %>% 
+  group_by(cell) %>% 
+  summarise(Ratio = mean(rel.log.BW, na.rm = T),
+            n = n())
+
+grid <- dgcellstogrid(dggs, d.log$cell) %>%
+  st_as_sf() %>% 
+  mutate(cell = d.log$cell) %>% 
+  mutate(Ratio = d.log$Ratio) %>%
+  st_transform("+proj=eck4") %>% 
+  st_wrap_dateline(options = c("WRAPDATELINE=YES"))
+
+world <- ne_countries(returnclass = "sf")%>% 
+  st_transform(crs = "+proj=eck4") %>% 
+  st_geometry()
+
+
+(p.log <- grid %>% 
+    mutate(area = as.numeric(st_area(.))) %>%
+    filter(area <= quantile(area, c(0.999))) %>% 
+    filter(!is.na(Ratio)) %>% 
+    ggplot() +
+    geom_sf(data = world, fill = "grey90", col = NA, lwd = 0.3) +
+    coord_sf(crs = "+proj=eck4") +
+    theme_minimal() +
+    theme(axis.text = element_blank(), 
+          axis.title = element_blank(),
+          legend.title=element_text(size=20), 
+          legend.text=element_text(size=14),
+         # legend.background = element_rect(size=1, linetype="solid", colour = 1), 
+          legend.key.height = unit(1.1, "cm"), 
+          legend.key.width = unit(1.8, "cm")) +
+    geom_sf(aes(fill = Ratio, 
+                color = Ratio
+                ), lwd = 0) +
+    scale_fill_viridis_c() +
+    scale_color_viridis_c(limits = c(-0.3, 1)
+                          ) +
+    theme(legend.position = "bottom") +
+    guides(
+      fill = "none",
+      color = guide_colourbar(
+      title = expression(paste("SES.PD"[Q]~">"~"\nSES.FD"[Q],"      ", "SES.FD"[Q]~">"~"\nSES.PD"[Q])),
+      title.position="top", title.hjust = -0.5
+      )) 
+  )
+
+library("patchwork")
+
+
+pp.log <- p.log +
+  plot_annotation(tag_levels = list("B"))  & 
+  theme(plot.tag = element_text(size = 40))
+
+ggsave("__Submission/Figures/04.map-log-guide.png", pp.log, height=15, width=20, units="in", dpi=600, bg = "white")
 
 #### Rao'S QE ~ phyl + funct ----
 
@@ -333,11 +411,10 @@ load("03.results/_temp.04.FD-PD-GAM-SES.RData")
 library("patchwork")
 
 
-p.out <- (out +
-  labs(y=expression(paste("SES.FD"[Q])))) /p.new + 
+p.out <- out/pp.log + 
   plot_layout(widths = c(1,1), heights = c(1,1)) + 
   plot_annotation(tag_levels = list(c("A", "", "", "", "B")))  & 
   theme(plot.tag = element_text(size = 40)) 
 
-ggsave("__Submission/Figures/04.map-gam.png", p.out, height=30, width=20, units="in", dpi=600, bg = "white")
+ggsave("__Submission/Figures/04.map-gam1.png", p.out, height=30, width=20, units="in", dpi=600, bg = "white")
 

@@ -10,7 +10,7 @@ library("marginaleffects")
 library("viridis")
 library("doSNOW")
 
-sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-data.RDS")
+sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-PCA-BW-data.RDS")
 
 ##funct ~ phyl sPlot open ----
 
@@ -134,8 +134,11 @@ saveRDS(result, "02.data/sPlotOpen-PA-GAMS.Rds")
 #                                        proj4string = crs("+proj=eck4"))
 # 
 # 
-coords <- sPlot.data  %>% dplyr::select(Longitude, Latitude)
-indices <- sPlot.data %>%
+coords <- sPlot.data %>% 
+  filter(!is.na(Longitude)) %>% 
+  dplyr::select(Longitude, Latitude)
+indices <- sPlot.data %>% 
+  filter(!is.na(Longitude)) %>%
   dplyr::select(
     RaoD.phyl,
     RQE.MULTI,
@@ -233,6 +236,56 @@ sum2
 sum3
 sum4
 
+# SES based on biomes and weighted
+
+coords <- sPlot.data %>% 
+  filter(!is.na(Longitude)) %>% 
+  dplyr::select(Longitude, Latitude)
+indices <- sPlot.data %>% 
+  filter(!is.na(Longitude)) %>% 
+  dplyr::select(
+    SES.RQEF.B,
+    SES.RQEF.BW,
+    SES.RQEP.B,
+    SES.RQEP.BW)
+
+data.wgs <- SpatialPointsDataFrame(coords = coords,
+                                   data = indices,
+                                   proj4string = CRS("+proj=eck4"))
+
+modb <- mgcv::gam(SES.RQEF.B ~ SES.RQEP.B + s(Longitude, Latitude, 
+                                      bs = "sos"), 
+              family = "gaussian", 
+              method = "REML", 
+              data = data.wgs)
+
+saveRDS(modb, "02.data/04.GAM-SES-RQEF-RQEP.bio.Rds")
+
+modb1 <- mgcv::gam(SES.RQEF.B ~ 1 + s(Longitude, Latitude, 
+                                              bs = "sos"), 
+                  family = "gaussian", 
+                  method = "REML", 
+                  data = data.wgs)
+
+saveRDS(modb1, "02.data/04.GAM-SES-RQEF-RQEP.bio.smooth.Rds")
+
+modbw <- mgcv::gam(SES.RQEF.BW ~ SES.RQEP.BW + s(Longitude, Latitude, 
+                                      bs = "sos"), 
+              family = "gaussian", 
+              method = "REML", 
+              data = data.wgs)
+
+saveRDS(modbw, "02.data/04.GAM-SES-RQEF-RQEP.bio.weigh.Rds")
+
+modbw.1 <- mgcv::gam(SES.RQEF.BW ~ 1 + s(Longitude, Latitude, 
+                                         bs = "sos"), 
+                     family = "gaussian", 
+                     method = "REML", 
+                     data = data.wgs)
+
+saveRDS(modbw.1, "02.data/04.GAM-SES-RQEF.bio.weigh-smooth.Rds")
+
+
 # make the predictions for each model to get the residuals
 mod.FD.PD <- readRDS("02.data/04.GAM-RQEF-RQEP.Rds")
 
@@ -266,6 +319,50 @@ pred.FD.PD.sqrt.SES <- predictions(mod.FD.PD.sqrt.SES)
 
 saveRDS(pred.FD.PD.sqrt.SES, "02.data/04.GAM-SES-RQEF-RQEP.sqrt_predictions.Rds")
 
+#####
+
+sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-PCA-BW-data.RDS") %>% 
+  as.data.frame() %>% 
+  filter(!is.na(Longitude),
+         !is.na(SES.RQEF.BW))
+
+# check relationship of SES.PD and devisions
+
+dev <- readRDS("02.data/perc-fern-sPlot.RDS")
+
+spp <- sPlot.data %>% 
+  left_join(dev,
+            by = "PlotObservationID")
+
+lmh <- lm(SES.RQEP.BW ~ Other, spp)
+
+summary(lmh)
+
+lmm <- lm(SES.RQEP.BW ~ Other, spp %>% 
+            filter(Other != 100))
+summary(lmm)
+
+lmmf <- lm(SES.RQEP.BW ~ Fern, spp %>% 
+             filter(Other != 100))
+summary(lmmf)
+
+lmmg <- lm(SES.RQEP.BW ~ Gymnosperm, spp %>% 
+             filter(Other != 100))
+summary(lmmg)
+
+lmml <- lm(SES.RQEP.BW ~ Lycopods, spp %>% 
+             filter(Other != 100))
+summary(lmml)
+
+nrow(spp %>% filter(Other == 100)) / nrow(spp) * 100
+
+lmhb <- lm(SES.RQEP.B ~ Other, spp)
+
+summary(lmhb)
+
+lmhg <- lm(SES.RQEP ~ Other, spp)
+
+summary(lmhg)
 
 # remove everything and load the predcitions in the environment
 rm(list = ls())
@@ -283,7 +380,10 @@ pred.FD.PD.SES <- readRDS("02.data/04.GAM-SES-RQEF-RQEP_predictions.Rds")
 pred.FD.PD.sqrt.SES <- readRDS("02.data/04.GAM-SES-RQEF-RQEP.sqrt_predictions.Rds")
 
 # load sPlot data
-sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-data.RDS")
+sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-PCA-BW-data.RDS") %>% 
+  as.data.frame() %>% 
+  filter(!is.na(Longitude),
+         !is.na(SES.RQEF.BW))
 
 # predict FD from PD based on the sequence between minimum and maximum of PD, 0.1 steps
 
@@ -319,6 +419,27 @@ FD.PD.sqrt.SES.preds <- predictions(mod.FD.PD.sqrt.SES, newdata = datagrid(
   SES.RQEP.sqrt = seq(
     min(sPlot.data$SES.RQEP.sqrt), 
     max(sPlot.data$SES.RQEP.sqrt), 
+    .1)
+))
+
+MPD.SES.preds <- predictions(mod.MPD, newdata = datagrid(
+  SES.MPD = seq(
+    min(sPlot.data$SES.MPD), 
+    max(sPlot.data$SES.MPD), 
+    .1)
+))
+
+B.SES.preds <- predictions(mod.SES.B, newdata = datagrid(
+  SES.RQEP.B = seq(
+    min(sPlot.data$SES.RQEP.B), 
+    max(sPlot.data$SES.RQEP.B), 
+    .1)
+))
+
+BW.SES.preds <- predictions(mod.SES.BW, newdata = datagrid(
+  SES.RQEP.BW = seq(
+    min(sPlot.data$SES.RQEP.BW), 
+    max(sPlot.data$SES.RQEP.BW), 
     .1)
 ))
 
@@ -524,15 +645,37 @@ res.S <- residuals.gam(SES.RQE.S)
                       breaks = c(10, 100, 1000, 10000)) 
 )
 
+
+library("patchwork")
+
+p.out <- (p.FPD + p.FPD.sqrt) /
+  (p.SES0 + p.SES.sqrt) /
+  (p.MPD + p.SES.B) +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A")  & 
+  theme(plot.tag = element_text(size = 40))
+
+ggsave("__Submission/Figures/04.GAM.FD-PD.png", p.out, 
+       height=30, width=25, units="in", dpi=600, bg = "white", limitsize = FALSE)
+
+
+
+
+res.S <- residuals.gam(mod.SES.BW.s)
+
+data <- sPlot.data %>%
+  filter(!is.na(SES.RQEP.BW),
+         !is.na(SES.RQEF.BW))
+
 d.RQE.SES <- data.frame(x = sPlot.data$SES.RQEP,
                         y = sPlot.data$SES.RQEF#-pred.FD.PD.SES$predicted
                         )
 
 n <- 1000000
 set.seed(999)
-x <- sort(runif(n,min(sPlot.data$SES.RQEF),max(sPlot.data$SES.RQEF)))
+x <- sort(runif(n,min(sPlot.data$SES.RQEF.BW),max(sPlot.data$SES.RQEF.BW)))
 
-err <- rnorm(n, mean=mean(sPlot.data$SES.RQEF), sd=sd(sPlot.data$SES.RQEF))/1.96
+err <- rnorm(n, mean=mean(sPlot.data$SES.RQEF.BW), sd=sd(sPlot.data$SES.RQEF.BW))/1.96
 hist(err)
 quantile(err, probs = c(0.025, 0.975))
 y <- x+err
@@ -543,6 +686,10 @@ conf <- predict(model1,interval="confidence")
 pred <- predict(model1,interval="prediction")
 
 data1 <- data.frame(x,y, pred)
+
+ggplot(data = dat) +
+  geom_line(aes(x = x, y = upr)) 
+  #geom_line(aes(x = x, y = lwr))
 
 library("ggpubr")
 library("png")
@@ -577,12 +724,12 @@ img <- readPNG("999.bg-crop.png")
 inter.low <- mean(data1$lwr-data1$x)
 inter.high <- mean(data1$upr-data1$x)
 
-yy <- sPlot.data %>% 
-  filter(SES.RQEF > inter.low + SES.RQEP &
-           SES.RQEF < inter.high + SES.RQEP)
+yy <- data %>% 
+  filter(SES.RQEF.BW > inter.low + SES.RQEP.BW &
+           SES.RQEF.BW < inter.high + SES.RQEP.BW)
 
-hist(yy$SES.RQEP)
-quantile(yy$SES.RQEP, probs = c(0.025, 0.975))
+hist(yy$SES.RQEP.BW)
+quantile(yy$SES.RQEP.BW, probs = c(0.025, 0.975))
 
 
 p.RQE.SES <- ggplot() +
@@ -599,19 +746,19 @@ p.RQE.SES <- ggplot() +
                          breaks = c(10, 100, 1000, 10000)) +
   geom_ribbon(data = data1, aes(ymin = lwr, ymax = upr, x = x), fill = "grey70", alpha = 0.3) +
   geom_smooth(data = data1, aes(x = x, y = y), method="lm", formula="y~x", color = "black") + 
-  geom_line(data = FD.PD.SES.preds, aes(x = SES.RQEP, y = estimate), color = "blue", linewidth = 2) +
-  geom_line(aes(x = c(quantile(yy$SES.RQEP, probs = c(0.025, 0.975))[1],
-                      quantile(yy$SES.RQEP, probs = c(0.025, 0.975))[1]), 
-                y = c(-Inf,
-                      inter.high + quantile(yy$SES.RQEP, probs = c(0.025, 0.975))[1])),
-            linetype = 2,
-            linewidth = 1.5) + 
-  geom_line(aes(x = c(quantile(yy$SES.RQEP, probs = c(0.025, 0.975))[2],
-                      quantile(yy$SES.RQEP, probs = c(0.025, 0.975))[2]), 
-                y = c(-Inf,
-                      inter.high + quantile(yy$SES.RQEP, probs = c(0.025, 0.975))[2])),
-            linetype = 2,
-            linewidth = 1.5) + 
+  geom_line(data = BW.SES.preds, aes(x = SES.RQEP.BW, y = estimate), color = "blue", linewidth = 2) +
+  # geom_line(aes(x = c(quantile(yy$SES.RQEP.BW, probs = c(0.025, 0.975))[1],
+  #                     quantile(yy$SES.RQEP.BW, probs = c(0.025, 0.975))[1]), 
+  #               y = c(-Inf,
+  #                     inter.high + quantile(yy$SES.RQEP.BW, probs = c(0.025, 0.975))[1])),
+  #           linetype = 2,
+  #           linewidth = 1.5) + 
+  # geom_line(aes(x = c(quantile(yy$SES.RQEP.BW, probs = c(0.025, 0.975))[2],
+  #                     quantile(yy$SES.RQEP.BW, probs = c(0.025, 0.975))[2]), 
+  #               y = c(-Inf,
+  #                     inter.high + quantile(yy$SES.RQEP.BW, probs = c(0.025, 0.975))[2])),
+  #           linetype = 2,
+#           linewidth = 1.5) + 
   labs(y = expression(paste("SES.FD"[Q])), x = expression(paste("SES.PD"[Q]))) +
   theme_bw() +
   theme(
@@ -643,17 +790,33 @@ p.RQE.SES <- ggplot() +
 
 
 (c <- sPlot.data %>% 
-  filter(SES.RQEF > inter.low + SES.RQEP &
-           SES.RQEF < inter.high + SES.RQEP) %>% 
+  filter(SES.RQEF.BW > inter.low + SES.RQEP.BW &
+           SES.RQEF.BW < inter.high + SES.RQEP.BW) %>% 
   nrow() / nrow(sPlot.data)*100)
 
 (d.FD <- sPlot.data %>% 
-  filter(SES.RQEF > inter.high + SES.RQEP) %>% 
+  filter(SES.RQEF.BW > inter.high + SES.RQEP.BW) %>% 
   nrow() / nrow(sPlot.data)*100)
 
 (d.PD <- sPlot.data %>% 
-  filter(SES.RQEF < inter.low + SES.RQEP) %>% 
+  filter(SES.RQEF.BW < inter.low + SES.RQEP.BW) %>% 
   nrow() / nrow(sPlot.data)*100)
+
+range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+
+log.th <- sPlot.data %>% 
+    dplyr::select(SES.RQEF.BW, SES.RQEP.BW) %>% 
+    mutate(x = range01(SES.RQEP.BW),
+           y = range01(SES.RQEF.BW) ) %>% 
+    filter(SES.RQEF.BW > inter.low + SES.RQEP.BW &
+           SES.RQEF.BW < inter.high + SES.RQEP.BW) %>% 
+    mutate(x = ifelse(x == 0, 0.001, x),
+           y = ifelse(y == 0, 0.001, y)) %>%
+    mutate(rel.BW = y/x) %>%
+    mutate(rel.log.BW = log(rel.BW))
+
+min(log.th$rel.log.BW)
+max(log.th$rel.log.BW)
 
 library("ggdendro")
 library("viridis")
@@ -975,24 +1138,219 @@ bb <- ne_download(type = "wgs84_bounding_box", category = "physical",
 # )
 layout <- "AABB
            CCDD"
+# 
+# p.out <- p.FPD +
+#                  
+#   p.FPD.sqrt + 
+#                 
+#   p.SES.sqrt + 
+#                 
+#   p.phyl.geo + 
+#                 
+#   #guide_area() +
+#   plot_layout(design = layout, heights = c(0.8, 0.8), guides = "collect") +
+#   plot_annotation(tag_levels = "A")  & 
+#   theme(plot.tag = element_text(size = 40))
+# 
+# 
+# ggsave("__Submission/Figures/S04.FD-PD-GAM_sqrt.png", p.out,
+#        height=25, width=30, units="in", dpi=600, bg = "white")
 
-p.out <- p.FPD +
-                 
-  p.FPD.sqrt + 
-                
-  p.SES.sqrt + 
-                
-  p.phyl.geo + 
-                
-  #guide_area() +
-  plot_layout(design = layout, heights = c(0.8, 0.8), guides = "collect") +
+rm(list = ls())
+### smooths
+sPlot.data <- readRDS("02.data/03.sPlot.PD.FD.CD-PCA-BW-data.RDS")
+sPlot.data <- sPlot.data %>% as.data.frame() %>% filter(!is.na(Longitude))
+
+mod.FD.S <- readRDS("02.data/04.GAM-RQEF-RQEP.Smooth.Rds")
+summary(mod.FD.S)
+
+mod.SES.glob <- readRDS("02.data/04.GAM-SES-RQEF-smooth.Rds")
+summary(mod.SES.glob)
+
+mod.SES.bio <- readRDS("02.data/04.GAM-SES-RQEF-RQEP.bio.smooth.Rds")
+summary(mod.SES.bio)
+
+mod.SES.biowe <- readRDS("02.data/04.GAM-SES-RQEF.bio.weigh-smooth.Rds")
+summary(mod.SES.biowe)
+
+sPlot.data$res.FD <- residuals.gam(mod.FD.S, type = "response")
+sPlot.data$res.SES.glob <- residuals.gam(mod.SES.glob, type = "response")
+
+sPlot.data <- sPlot.data %>% 
+  filter(!is.na(SES.RQEF.BW),
+         !is.na(SES.RQEP.BW))
+
+sPlot.data$res.SES.bio <- residuals.gam(mod.SES.bio, type = "response")
+sPlot.data$res.SES.biowe <- residuals.gam(mod.SES.biowe, type = "response")
+
+d.RQEF <- sPlot.data %>% 
+  group_by(cell) %>% 
+  summarise(s.FD = mean(res.FD, na.rm = T),
+            s.Glob = mean(res.SES.glob, na.rm = T),
+            s.Bio = mean(res.SES.bio, na.rm = T),
+            s.Biowe = mean(res.SES.biowe, na.rm = T)
+            )
+
+dggs <- dgconstruct(area=50*50, metric=T, resround='down')
+
+grid.RQEF <- dgcellstogrid(dggs, d.RQEF$cell) %>%
+  st_as_sf() %>% 
+  mutate(cell = d.RQEF$cell) %>% 
+  mutate(s.FD = d.RQEF$s.FD,
+         s.Glob = d.RQEF$s.Glob,
+         s.Bio = d.RQEF$s.Bio,
+         s.Biowe = d.RQEF$s.Biowe) %>%
+  st_transform("+proj=eck4") %>% 
+  st_wrap_dateline(options = c("WRAPDATELINE=YES"))
+
+world <- ne_countries(returnclass = "sf")%>% 
+  st_transform(crs = "+proj=eck4") %>% 
+  st_geometry()
+
+
+(FD.geo <- grid.RQEF %>% 
+    mutate(area = as.numeric(st_area(.))) %>%
+    filter(area <= quantile(area, c(0.999))) %>%  
+    ggplot() +
+    geom_sf(data = world, fill = "grey90", col = NA, lwd = 0.3) +
+    # geom_sf(data = bb, col = "grey20", fill = NA) +
+    coord_sf(crs = "+proj=eck4") +
+    theme_minimal() +
+    theme(axis.text = element_blank(), 
+          axis.title = element_blank(),
+          legend.title=element_text(size=36),
+          legend.text=element_text(size=36),
+          #legend.background = element_rect(size=0.1, linetype="solid", colour = 1), 
+          legend.key.height = unit(1.1, "cm"), 
+          legend.key.width = unit(1.1, "cm"),
+          legend.position = "bottom", 
+          plot.margin=grid::unit(c(0,0,0,0), "mm")
+    ) +
+    geom_sf(aes(color = s.FD, fill = s.FD), lwd = 0) +
+    scale_fill_viridis_c(option = "plasma",
+                         breaks = c(-0.2,0,0.4),
+                         labels = c("0.2", "0", "0.4"),
+                         name = expression(paste("FD"[Q]))) +
+    scale_color_viridis_c(option = "plasma",
+                          breaks = c(-0.2,0,0.4),
+                          labels = c("0.2", "0", "0.4"),
+                          name = expression(paste("FD"[Q]))) +
+    guides(
+      fill = "none",
+      color = guide_colourbar(
+        #title = expression(paste("Higher\nSES.PD"[Q], symbol("\256"), "Higher\nSES.FD"[Q])),
+        title.position="top", title.hjust = 0.5
+      )) )
+
+(glob.geo <- grid.RQEF %>% 
+    mutate(area = as.numeric(st_area(.))) %>%
+    filter(area <= quantile(area, c(0.999))) %>%  
+    ggplot() +
+    geom_sf(data = world, fill = "grey90", col = NA, lwd = 0.3) +
+    # geom_sf(data = bb, col = "grey20", fill = NA) +
+    coord_sf(crs = "+proj=eck4") +
+    theme_minimal() +
+    theme(axis.text = element_blank(), 
+          axis.title = element_blank(),
+          legend.title=element_text(size=36),
+          legend.text=element_text(size=36),
+          #legend.background = element_rect(size=0.1, linetype="solid", colour = 1), 
+          legend.key.height = unit(1.1, "cm"), 
+          legend.key.width = unit(1.1, "cm"),
+          legend.position = "bottom", 
+          plot.margin=grid::unit(c(0,0,0,0), "mm")
+    ) +
+    geom_sf(aes(color = s.Glob, fill = s.Glob), lwd = 0) +
+    scale_fill_viridis_c(option = "plasma",
+                         breaks = c(-2,0,4),
+                         name = expression(paste("SES.FD"[Q], "(Global)"))) +
+    scale_color_viridis_c(option = "plasma",
+                          breaks = c(-2,0,4),
+                          name = expression(paste("SES.FD"[Q], "(Global)"))) +
+    guides(
+      fill = "none",
+      color = guide_colourbar(
+        #title = expression(paste("Higher\nSES.PD"[Q], symbol("\256"), "Higher\nSES.FD"[Q])),
+        title.position="top", title.hjust = 0.5
+      )) )
+
+(bio.geo <- grid.RQEF %>% 
+    mutate(area = as.numeric(st_area(.))) %>%
+    filter(area <= quantile(area, c(0.999))) %>%  
+    ggplot() +
+    geom_sf(data = world, fill = "grey90", col = NA, lwd = 0.3) +
+    # geom_sf(data = bb, col = "grey20", fill = NA) +
+    coord_sf(crs = "+proj=eck4") +
+    theme_minimal() +
+    theme(axis.text = element_blank(), 
+          axis.title = element_blank(),
+          legend.title=element_text(size=36),
+          legend.text=element_text(size=36),
+          #legend.background = element_rect(size=0.1, linetype="solid", colour = 1), 
+          legend.key.height = unit(1.1, "cm"), 
+          legend.key.width = unit(1.1, "cm"),
+          legend.position = "bottom", 
+          plot.margin=grid::unit(c(0,0,0,0), "mm")
+    ) +
+    geom_sf(aes(color = s.Bio, fill = s.Bio), lwd = 0) +
+    scale_fill_viridis_c(option = "plasma",
+                         breaks = c(-6, 0, 3),
+                         name = expression(paste("SES.FD"[Q], "(Biome)"))) +
+    scale_color_viridis_c(option = "plasma",
+                          breaks = c(-6,0,3),
+                          name = expression(paste("SES.FD"[Q], "(Biome)")))+
+    guides(
+      fill = "none",
+      color = guide_colourbar(
+        #title = expression(paste("Higher\nSES.PD"[Q], symbol("\256"), "Higher\nSES.FD"[Q])),
+        title.position="top", title.hjust = 0.5
+      )) )
+
+(biowe.geo <- grid.RQEF %>% 
+    mutate(area = as.numeric(st_area(.))) %>%
+    filter(area <= quantile(area, c(0.999))) %>%  
+    ggplot() +
+    geom_sf(data = world, fill = "grey90", col = NA, lwd = 0.3) +
+    # geom_sf(data = bb, col = "grey20", fill = NA) +
+    coord_sf(crs = "+proj=eck4") +
+    theme_minimal() +
+    theme(axis.text = element_blank(), 
+          axis.title = element_blank(),
+          legend.title=element_text(size=36),
+          legend.text=element_text(size=36),
+          #legend.background = element_rect(size=0.1, linetype="solid", colour = 1), 
+          legend.key.height = unit(1.1, "cm"), 
+          legend.key.width = unit(1.1, "cm"),
+          legend.position = "bottom", 
+          plot.margin=grid::unit(c(0,0,0,0), "mm")
+    ) +
+    geom_sf(aes(color = s.Biowe, fill = s.Biowe), lwd = 0) +
+    scale_fill_viridis_c(option = "plasma",
+                         breaks = c(-10,0,5),
+                         name = expression(paste("SES.FD"[Q], "(Biome, weighted)"))) +
+    scale_color_viridis_c(option = "plasma",
+                          breaks = c(-10,0,5),
+                          name = expression(paste("SES.FD"[Q], "(Biome, weighted)")))+
+    guides(
+      fill = "none",
+      color = guide_colourbar(
+        #title = expression(paste("Higher\nSES.PD"[Q], symbol("\256"), "Higher\nSES.FD"[Q])),
+        title.position="top", title.hjust = 0.5
+      )) )
+
+library("patchwork")
+
+layout = "AABB
+          CCDD"
+
+p.s <- FD.geo + glob.geo +
+  bio.geo + biowe.geo +
+  plot_layout(design = layout) +
   plot_annotation(tag_levels = "A")  & 
   theme(plot.tag = element_text(size = 40))
 
-
-ggsave("__Submission/Figures/S04.FD-PD-GAM_sqrt.png", p.out,
-       height=25, width=30, units="in", dpi=600, bg = "white")
-
+ggsave("__Submission/Figures/04.smooths.png", p.s, 
+       height=8, width=17, units="in", dpi=600, bg = "white", limitsize = FALSE)
 
 #sPlot Open
 

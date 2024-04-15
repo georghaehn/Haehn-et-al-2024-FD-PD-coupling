@@ -93,10 +93,12 @@ sbatch -a 1-95000:5000 02.02.phylo-calculations.sPlotOpen.sh
 
 To calculate standardized effect size of phylogenetic diversity, <br>
 for each species richness 499 times random species communities were
-sampled <br> and RQEP and MPD calculated. <br>
+sampled <br> and RQEP and MPD calculated based on global and biome specific species pools. <br>
 
 ```{bash, eval = FALSE}
-sbatch -a 2-718:2 02.03.phylo-calculations-null.sh
+sbatch -a 2-718:2 02.03.01.phylo-calculations-null.sh
+sbatch -a 2-718:2 02.03.02.phylo-calculations-null-biome.sh
+sbatch -a 2-718:2 02.03.03.phylo-calculations-null-biome-weighted.sh
 ```
 
 #### 2.4 Calculate functional diversity
@@ -112,6 +114,8 @@ Analogue to 2.3.
 
 ```{bash, eval = FALSE}
 sbatch -a 2-718:2 02.05.funct-div-calculations-null.sh
+sbatch -a 2-718:2 02.05.01.funct-div-calculations-null-biome.sh
+sbatch -a 2-718:2 02.05.02.funct-div-calculations-null-biome-weighted.sh
 ```
 
 ### Step 3: Prepare the data and add the response variables
@@ -133,13 +137,12 @@ climate <br> condition from the last glacial maximum from “StableClim”
 <br> The data was available at a 2.5° spatial scale and were extracted with the <br>
 *extract* function from the $raster$ package for each vegetation-plot.
 
-Four additional variables were present in the sPlot database:
+Two additional variables were present in the sPlot database:
 
-1.  plot size
-2.  which plants were recorded in the plot (e.g., all vascular plants, 
+1.  which plants were recorded in the plot (e.g., all vascular plants, 
     only dominant species, all woody plants, only trees)
-3.  vegetation type (forest vs. non-forest)
-4.  biome
+2.  vegetation type (forest vs. non-forest)
+
 
 ```{r, eval = FALSE}
 source("03.02.explanatory-climate-variables.R", local = knitr::knit_global())
@@ -153,6 +156,8 @@ dataset.
 
 ```{r, eval = FALSE}
 source("03.03.SES-calculation_merging.R", local = knitr::knit_global())
+
+source("03.04.SES-calculation_BIOME.R", local = knitr::knit_global())
 ```
 
 ### Step 4: Statistical analysis
@@ -183,6 +188,7 @@ maximum number <br> of 20,000 trees. The BRTs were calculated using the *gbm.ste
 
 ```{bash, eval = FALSE}
 sbatch -a 1-2:1 04.02.BRT.sh
+source("04.03.BRT-BW.R", local = knitr::knit_global())
 ```
 
 #### 4.3 Explaining functional and phylogenetic diversity

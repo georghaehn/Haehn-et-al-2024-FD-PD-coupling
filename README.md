@@ -1,8 +1,7 @@
-Summary of the workflow for Haehn et al. “Functional diversity is
-decoupled from phylogenetic diversity across plant communities,
-reflecting biogeographic and climatic history”.
+Summary of the workflow for Haehn et al. 2024 “Global decoupling of
+functional and phylogenetic diversity in plant communities”.
 ================
-06/12/2023
+15/04/2024
 
 ### Executive summary
 

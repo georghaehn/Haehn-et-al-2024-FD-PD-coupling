@@ -1,6 +1,6 @@
 ---
-title: "Summary of the workflow for Haehn et al. \"Functional diversity is decoupled from phylogenetic diversity across plant communities, reflecting biogeographic and climatic history\"."
-date: "06/12/2023"
+title: "Summary of the workflow for Haehn et al. 2024 \"Global decoupling of functional and phylogenetic diversity in plant communities\"."
+date: "15/04/2024"
 output: github_document
 ---
 ```{r setup, include=F}

@@ -256,13 +256,20 @@ BRT.BW.rel <- readRDS("02.data/04.BRT-results-SES.BW.rel.log.RDS")
 
 BRT.sum <- summary(BRT.BW[[1]]) %>%
   as.data.frame() %>% 
-  mutate(Response = "SES.FD") %>% 
+  mutate(Response = "SES.FD",
+         Direction = ifelse(var == "stable.clim", "+",
+                            ifelse(var == "PC2", "+/-",
+                                   ifelse(var == "PC5", "-", NA)))) %>% 
   bind_rows(., summary(BRT.BW[[2]]) %>%
               as.data.frame() %>% 
-              mutate(Response = "SES.PD")) %>% 
+              mutate(Response = "SES.PD",
+                     Direction = ifelse(var == "PC1", "+",
+                                        ifelse(var == "is.forest", "-", NA)))) %>% 
   bind_rows(., summary(BRT.BW.rel) %>%
               as.data.frame() %>% 
-              mutate(Response = "log")) %>%
+              mutate(Response = "log",
+                     Direction = ifelse(var == "PC1", "-/+",
+                                        ifelse(var == "is.forest", "+", NA)))) %>%
   mutate(var = gsub("Plant_recorded", "Plants recorded", var)) %>% 
   mutate(var = gsub("is.forest", "Forest or Non-Forest", var)) %>% 
   mutate(var = gsub("stable.clim", "Climate variability after LGM", var)) %>%
@@ -274,10 +281,10 @@ BRT.sum <- summary(BRT.BW[[1]]) %>%
   mutate(var = gsub("`Plants recorded`", "Plants recorded", var)) 
 
 
-(p3 <- BRT.sum %>% 
-    ggplot() +
-    geom_bar(data = . %>% filter(Response == "log"),
-             aes(x=reorder(var, desc(var)), y=rel.inf, fill="log"), stat = "identity", position = position_dodge2()) +
+(p3 <- ggplot(data = BRT.sum %>% filter(Response == "log"),
+           aes(x=reorder(var, desc(var)), y=rel.inf, fill="log")) +
+    geom_bar(stat = "identity", position = position_dodge2()) +
+    geom_text(aes(label = Direction), size = 12, vjust = 0.5, hjust = -0.5) +
     # geom_errorbar(data = . %>% filter(!is.na(phylogenetic)) %>% arrange(phyl.group),
     #               aes(x=var, ymin=phylogenetic-sd, ymax=phylogenetic+sd), 
     #               position = position_dodge2(width = .5, padding = .5), colour="black", alpha=0.9, size=1) +
@@ -315,10 +322,10 @@ BRT.sum <- summary(BRT.BW[[1]]) %>%
 )
 
 #ggsave(filename = "__Submission/Figures/04.BRT-summary.rel.png", width = 30, height = 20, units = "in", dpi = 600, p3)
-(p3.0 <- BRT.sum %>% 
-    ggplot() +
-    geom_bar(data = . %>% filter(Response == "SES.FD"),
-             aes(x=reorder(var, desc(var)), y=rel.inf, fill="SES.FD"), stat = "identity", position = position_dodge2()) +
+(p3.0 <- ggplot(data = BRT.sum %>% filter(Response == "SES.FD"),
+           aes(x=reorder(var, desc(var)), y=rel.inf, fill="SES.FD")) +
+    geom_bar(stat = "identity", position = position_dodge2()) +
+    geom_text(aes(label = Direction), size = 12, vjust = 0.5, hjust = -0.5) +
     # geom_errorbar(data = . %>% filter(!is.na(phylogenetic)) %>% arrange(phyl.group),
     #               aes(x=var, ymin=phylogenetic-sd, ymax=phylogenetic+sd), 
     #               position = position_dodge2(width = .5, padding = .5), colour="black", alpha=0.9, size=1) +
@@ -352,10 +359,11 @@ BRT.sum <- summary(BRT.BW[[1]]) %>%
       axis.text.y = element_blank()
     )
 )
-(p3.01 <- BRT.sum %>% 
-    ggplot() +
-    geom_bar(data = . %>% filter(Response == "SES.PD"),
-             aes(x=reorder(var, desc(var)), y=rel.inf, fill="SES.PD"), stat = "identity", position = position_dodge2()) +
+
+(p3.01 <- ggplot(data = BRT.sum %>% filter(Response == "SES.PD"),
+           aes(x=reorder(var, desc(var)), y=rel.inf, fill="SES.PD")) +
+    geom_bar(stat = "identity", position = position_dodge2()) +
+    geom_text(aes(label = Direction), size = 12, vjust = 0.5, hjust = -0.5) +
     # geom_errorbar(data = . %>% filter(!is.na(phylogenetic)) %>% arrange(phyl.group),
     #               aes(x=var, ymin=phylogenetic-sd, ymax=phylogenetic+sd), 
     #               position = position_dodge2(width = .5, padding = .5), colour="black", alpha=0.9, size=1) +
@@ -471,17 +479,17 @@ BRT.sum <- summary(BRT.BW[[1]]) %>%
 
 ps <- p4 + plot_spacer() + plot_spacer() + plot_spacer() + plot_spacer() + plot_spacer() + plot_spacer()
 
-pp <- p3.0 + p3.01 + p3 + #plot_layout(guides = "collect") +
-  #plot_annotation(tag_levels = "A") & 
-  theme(#plot.tag = element_text(size = 40),
+pp <- p3.0 + p3.01 + p3 + plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A") &
+  theme(plot.tag = element_text(size = 40),
         legend.position = "top")
 
-ppp <- p4 + inset_element(pp, left = 0.01, bottom = -0.2, right = 1, top = 1.24)
+ppp <- p4 + inset_element(pp, left = 0.01, bottom = -0.2, right = 1, top = 1.24) 
 
 ggsave(filename = "__Submission/Figures/05.BRT-summary-BW.png", width = 33, height = 10, 
        units = "in", dpi = 600, ppp)
 
-ggsave(filename = "__Submission/Figures/05.BRT-summary-BW.pdf", width = 33, height = 10, 
+ggsave(filename = "__Submission/Figures/Figure3.pdf",  width = 33, height = 10, 
        units = "in", dpi = 600, ppp)
 
 #remotes::install_github("njtierney/treezy")
@@ -609,3 +617,12 @@ ggsave("__Submission/Figures/04.BRT-par-SES.FD.BW.png", FD,
 ggsave("__Submission/Figures/04.BRT-par-SES.FDPD.log.BW.png", FDPD, 
        height=10, width=20, units="in", dpi=600, bg = "white")
 
+ffout <- PD / FDPD +
+  plot_annotation(tag_levels = list(c("A", "", "B", "")))  & 
+  theme(plot.tag = element_text(size = 52))
+
+ggsave("__Submission/Figures/04.BRT-par-SES.FD-FDPD.log.BW.png", ffout, 
+       height=20, width=20, units="in", dpi=600, bg = "white")
+
+ggsave("__Submission/Figures/04.BRT-par-SES.FD-FDPD.log.BW.pdf", ffout, 
+       height=20, width=20, units="in", dpi=600, bg = "white")

@@ -92,13 +92,14 @@ sbatch -a 1-95000:5000 02.02.phylo-calculations.sPlotOpen.sh
 
 To calculate standardized effect size of phylogenetic diversity, <br>
 for each species richness 499 times random species communities were
-sampled <br> and RQEP and MPD calculated based on global and biome
-specific species pools. <br>
+sampled <br> and RQEP and MPD calculated based on global, biome, and
+phylogenetic cluster specific species pools. <br>
 
 ``` bash
-sbatch -a 2-718:2 02.03.01.phylo-calculations-null.sh
-sbatch -a 2-718:2 02.03.02.phylo-calculations-null-biome.sh
-sbatch -a 2-718:2 02.03.03.phylo-calculations-null-biome-weighted.sh
+sbatch -a 2-718:2 02.03.phylo-calculations-null.sh
+sbatch -a 2-718:2 02.03.01.phylo-calculations-null-biome.sh
+sbatch -a 2-718:2 02.03.02.phylo-calculations-null-biome-weighted.sh
+sbatch -a 2-718:2 02.03.03.phylo-calculations-null-phyl-clust.sh
 ```
 
 #### 2.4 Calculate functional diversity
@@ -116,6 +117,7 @@ Analogue to 2.3.
 sbatch -a 2-718:2 02.05.funct-div-calculations-null.sh
 sbatch -a 2-718:2 02.05.01.funct-div-calculations-null-biome.sh
 sbatch -a 2-718:2 02.05.02.funct-div-calculations-null-biome-weighted.sh
+sbatch -a 2-718:2 02.05.03.funct-div-calculations-null-phyl-clust.sh
 ```
 
 ### Step 3: Prepare the data and add the response variables
@@ -245,10 +247,4 @@ when FD is based on different traits. Code to produce Figure S 7.
 
 ``` r
 source("06.phylosignals-trait-evaluation.R", local = knitr::knit_global())
-```
-
-### Step 7: Supplementary S2 - Model summary
-
-``` r
-source("Haehn_et.al_2023_sPlot-project#46_S2.Rmd", local = knitr::knit_global())
 ```

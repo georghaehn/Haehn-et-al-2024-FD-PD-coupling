@@ -149,3 +149,133 @@ sum(is.na(sPlot.data$SES.RQEP.BW))
 sum(is.na(sPlot.data$SES.RQEF.BW))
 
 saveRDS(data, "02.data/03.sPlot.PD.FD.CD-PCA-BW-data.RDS")
+
+### add phylogenetic kingdoms
+
+data <- readRDS("02.data/03.sPlot.PD.FD.CD-PCA-BW-data.RDS")
+
+# read data with assigned phylokingdoms
+
+pk <- readRDS("02.data/phylo-kingdom-data.RDS")
+
+data <- left_join(data, pk %>% 
+                    dplyr::select(PlotObservationID, Phyl.clust = Cluster), 
+                  by = "PlotObservationID")
+
+table(data[, c("Country", "Phyl.clust")])
+
+#load phylo null
+
+PD.null.names <- list.files("02.data/eve-calculations/PD-null-phyl-clust", pattern = "*.Rds")
+
+PD.null.list <- list()
+
+for(i in 1:length(PD.null.names)){
+  PD.null.list[[i]] <- readRDS(paste0("02.data/eve-calculations/PD-null-phyl-clust/", PD.null.names[i]))
+}
+
+PD.ll <- lapply(PD.null.list, FUN = function(x) {
+  x[[1]]$var <- colnames(x[[1]])[1]
+  x[[2]]$var <- colnames(x[[2]])[1]
+  colnames(x[[1]])[1] <- "value"
+  colnames(x[[2]])[1] <- "value"
+  rbind(x[[1]], x[[2]])})
+
+PD.null <- do.call(rbind, PD.ll)
+
+PD.null.pk <- PD.null %>% 
+  group_by(SR, Phyl.clust, var) %>% 
+  summarise(mean.pk = mean(value),
+            sd.pk = sd(value)) %>% 
+  as.data.frame() %>% 
+  pivot_wider(values_from = c(mean.pk, sd.pk), names_from = var)
+
+#load funct div null
+
+FD.null.names <- list.files("02.data/eve-calculations/FD-null-phyl-clust", pattern = "*.Rds")
+
+FD.null.list <- list()
+
+for(i in 1:length(FD.null.names)){
+  FD.null.list[[i]] <- readRDS(paste0("02.data/eve-calculations/FD-null-phyl-clust/", FD.null.names[i]))
+}
+
+FD.ll <- lapply(FD.null.list, FUN = function(x) {
+  x[[1]]$var <- colnames(x[[1]])[1]
+  x[[2]]$var <- colnames(x[[2]])[1]
+  colnames(x[[1]])[1] <- "value"
+  colnames(x[[2]])[1] <- "value"
+  rbind(x[[1]], x[[2]])})
+
+FD.null <- do.call(rbind, FD.ll)
+
+FD.null.pk <- FD.null %>% 
+  group_by(SR, Phyl.clust, var) %>% 
+  summarise(mean.pk = mean(value),
+            sd.pk = sd(value)) %>% 
+  as.data.frame() %>% 
+  pivot_wider(values_from = c(mean.pk, sd.pk), names_from = var)
+
+data1 <- PD.null.pk %>% 
+  mutate(m = paste0(Phyl.clust, "_", SR)) %>% 
+  dplyr::select(-c(SR, Phyl.clust)) %>% 
+  left_join(FD.null.pk %>% 
+              mutate(m = paste0(Phyl.clust, "_", SR)) %>% 
+              dplyr::select(-c(SR, Phyl.clust)) ) %>% 
+  left_join(data %>% 
+              mutate(m = paste0(Phyl.clust, "_", SR))) %>% 
+  mutate(SES.RQEP.PK = (RaoD.phyl - mean.pk_RQE.phyl.null)/sd.pk_RQE.phyl.null,
+         SES.RQEF.PK = (RQE.MULTI - mean.pk_RQE.multi.null)/sd.pk_RQE.multi.null
+         )
+
+sum(is.na(data1$SES.RQEP))
+sum(is.na(data1$SES.RQEF))
+sum(is.na(data1$SES.RQEP.PK))
+sum(is.na(data1$SES.RQEF.PK))
+
+saveRDS(data1, "02.data/03.sPlot.PD.FD.CD-PCA-BW-PK-data.RDS")
+
+### available dataset
+
+data1 <- readRDS("02.data/03.sPlot.PD.FD.CD-PCA-BW-PK-data.RDS")
+
+data.public <- data1 %>%
+  dplyr::select(Longitude, Latitude, 
+                
+                PD, MPD, MNTD, RaoD.phyl, RQEP.sqrt,
+                MPD.sqrt, SES.RQEP, SES.RQEP.sqrt, SES.MPD, SES.MPD.sqrt, 
+                SES.RQEP.B, SES.RQEP.BW, SES.RQEP.PK,
+                
+                RQE.MULTI, FDis.MULTI, SES.RQEF, SES.FDis,
+                SES.RQEF.B, SES.RQEF.BW, SES.RQEF.PK,
+                
+                mean.pk_MPD.null:sd.bio_RQE.multi.null.weigh,
+                
+                mean.MPD:sd.RQE.phyl.sqrt,
+                
+                mean.FDis.SLA:sd.RQE.MULTI
+                ) %>%
+  mutate(Longitude = round(jitter(round(Longitude, digits = 2)), digits = 2),
+         Latitude = round(jitter(round(Latitude, digits = 2)), digits = 2)) %>%
+  filter(!is.na(SES.RQEF.PK)) %>% 
+  dplyr::select(-m)
+
+write.csv(data.public, "02.data/sPlot_FD-PD_data.csv")
+
+data1.open <- readRDS("02.data/01c.sPlotOpen.PD.FD.CD-data.RDS")
+
+data.open <- data1.open %>%
+  dplyr::select(Longitude, Latitude,
+                
+                PD, MPD, MNTD, RaoD.phyl, SES.RQEP, SES.MPD,
+                
+                FDis.SLA:RQE.MULTI,
+                
+                SES.RQEF, SES.FDis,
+                
+                mean.MPD:sd.RQE.phyl,
+                
+                mean.FDis.SLA:sd.RQE.MULTI
+                )
+
+write.csv(data.open, "02.data/sPlotOpen_FD-PD_data.csv")

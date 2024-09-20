@@ -225,8 +225,8 @@ summary(mod.P.FF)
 res.P.FF <- residuals.gam(mod.P.FF, type = "response")
 
 p.phyl.for <- ggplot() +
-  geom_sina(aes(y = res.P.FF, 
-                x = pred.orig.RQEP.new$is.forest), color = "grey", alpha = 0.3) +
+  geom_violin(aes(y = res.P.FF, 
+                x = pred.orig.RQEP.new$is.forest), fill = "grey", color = "grey") +
   geom_boxplot(aes(x = as.factor(pred.RQEP.for.out$is.forest), y = pred.RQEP.for.out$estimate)) +
   #geom_violin(aes(x = pred.orig.RQEP$is.forest, y = pred.orig.RQEP$SES.RQEP, color = "SES.RQEP"), size = 1.5) +
   labs(y = expression(paste("Residuals SES.PD"[Q])), x = "", color = "") +
@@ -745,8 +745,8 @@ summary(mod.rel.FF)
 res.rel.FF <- residuals.gam(mod.rel.FF, type = "response")
 
 p.rel.for <- ggplot() +
-  geom_sina(aes(y = res.rel.FF, 
-                x = pred.orig.rel.new$is.forest), color = "grey", alpha = 0.3) +
+  geom_violin(aes(y = res.rel.FF, 
+                x = pred.orig.rel.new$is.forest), fill = "grey", color = "grey") +
   geom_boxplot(aes(x = as.factor(pred.rel.for.out$is.forest), y = pred.rel.for.out$estimate)) +
   #geom_violin(aes(x = pred.orig.RQEP$is.forest, y = pred.orig.RQEP$SES.RQEP, color = "SES.RQEP"), size = 1.5) +
   labs(y = expression(paste("Residuals log(SES.FD"[Q]/"SES.PD"[Q],")")), x = "", color = "") +
@@ -775,7 +775,8 @@ p.out.rel <- p.rel.PC1 + p.rel.for +
 pp.out <- wrap_elements(p.out.rel) +
   labs(tag = "Residuals") +
   theme(
-    plot.tag = element_text(size = 47, angle = 90, vjust = -6, hjust = 20),
+    plot.tag = element_text(size = 47, angle = 90, vjust = -6#, hjust = 20
+                            ),
     plot.tag.position = "left"
   )
 
@@ -847,3 +848,823 @@ ggsave("__Submission/Figures/05.GAM.expl.smooth.png", p.smooth,
 
 # ggsave("__Submission/Figures/05.GAM.expl.smooth.pdf", p.smooth, 
 #        height=10, width=25, units="in", dpi=600, bg = "white", limitsize = FALSE)
+
+
+#### Plots by category status ----
+
+# ll3 <- readRDS("02.Data/04.GAM-status-ll3.RDS")
+# 
+# 
+# p1 <- ll3[["PC1"]] |>
+#   filter(fitted < quantile(fitted, 0.95),
+#          fitted > quantile(fitted, 0.05)) %>% 
+#   ggplot(aes(x = PC1, y = fitted, group = rep)) +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#   geom_line(alpha = 0.05) +
+#   geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_text(size = 44),
+#     axis.text.x = element_text(size = 40),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(x = "PC1 - Annual precipitation\n(dry to wet)") +
+#   annotate("text", x = -3, y = -2.5, label = "Coupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -3, y = -2.5, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = -3, y = -0.1, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -3, y = -0.1, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = -3, y = 2, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -3, y = 2, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7)
+# 
+# 
+# p2 <- ll3[["PC2"]] |>
+#   filter(fitted < quantile(fitted, 0.95),
+#          fitted > quantile(fitted, 0.05)) %>% 
+#   ggplot(aes(x = PC2, y = fitted, group = rep)) +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#   geom_line(alpha = 0.05) +
+#   geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_text(size = 44),
+#     axis.text.x = element_text(size = 40),
+#     axis.title.y = element_blank(),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(x = "PC2 - Temp. coldest\nquarter/month (cold to hot)") +
+#   annotate("text", x = -12.5, y = -2.5, label = "Coupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -12.5, y = -2.5, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = -12.5, y = -0, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -12.5, y = -0, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = -12.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -12.5, y = 1.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7)
+# 
+# 
+# 
+# p5 <- ll3[["PC5"]] |>
+#   filter(fitted < quantile(fitted, 0.95),
+#          fitted > quantile(fitted, 0.05)) %>% 
+#   ggplot(aes(x = PC5, y = fitted, group = rep)) +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#   geom_line(alpha = 0.05) +
+#   geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_text(size = 44),
+#     axis.text.x = element_text(size = 40),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(x = "PC5 - Precipitation\nseasonality (low to high)")+
+#   annotate("text", x = -4, y = -2, label = "Coupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -4, y = -2, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = -4, y = -0, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -4, y = -0, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = -4, y = 1, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = -4, y = 1, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7)
+# 
+# 
+# ps <- ll3[["Stable.clim"]] |>
+#   filter(fitted < quantile(fitted, 0.95),
+#          fitted > quantile(fitted, 0.05)) %>% 
+#   ggplot(aes(x = stable.clim, y = fitted, group = rep)) +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#   geom_line(alpha = 0.05) +
+#   geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_text(size = 44),
+#     axis.text.x = element_text(size = 40),
+#     axis.title.y = element_blank(),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(x = "Climate variability\nafter LGM [°C p.a.]")+
+#   annotate("text", x = 0.5, y = -2.5, label = "Coupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = 0.5, y = -2.5, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = 0.5, y = -0, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = 0.5, y = -0, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#   
+#   annotate("text", x = 0.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+#   annotate("text", x = 0.5, y = 1.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7)
+# 
+# pf <- ll3[["Forest"]] |>
+#   mutate(is.forest = ifelse(is.forest == TRUE, "Forest", "Non-Forest")) %>% 
+#   ggplot(aes(x = is.forest, y = fitted, group = rep)) +
+#   #geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#   geom_point(alpha = 0.05) +
+#   geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_blank(),
+#     axis.text.x = element_text(size = 40, color = "black", vjust = -0.5),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   scale_y_continuous(limits = c(-2, 1.5)) +
+#   annotate("text", x = "Forest", y = -1.5, label = "Coupling", vjust = -0.5, size = 10, hjust = 1) +
+#   annotate("text", x = "Forest", y = -1.5, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7, hjust = 1) +
+#   
+#   annotate("text", x = "Forest", y = -0, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+#   annotate("text", x = "Forest", y = -0, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7, hjust = 1) +
+#   
+#   annotate("text", x = "Forest", y = 1, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+#   annotate("text", x = "Forest", y = 1, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7, hjust = 1)
+# 
+# pp <- ll3[["pv"]] %>% 
+#   filter(Expl != "Dev. expl.") %>% 
+#   ggplot() +
+#   geom_point(aes(x = Expl, y = V1, group = rep), alpha = 0.2) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_blank(),
+#     axis.text.x = element_text(size = 40, color = "black", vjust = -0.5),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(y = "p-value")
+# 
+# devv <- ll3[["pv"]] %>% 
+#   filter(Expl == "Dev. expl.") %>% 
+#   ggplot() +
+#   geom_point(aes(x = Expl, y = V1, group = rep), alpha = 0.2) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_blank(),
+#     axis.text.x = element_blank(),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(y = "Explained deviance", x = "") +
+#   scale_y_continuous(breaks = scales::breaks_pretty())
+# 
+# 
+# library(patchwork)
+# 
+# style <- "AAAAB"
+# 
+# pd <- pp + devv +
+#   plot_layout(design = style)
+# 
+# ppp <- (p1 + p2) / (p5 + ps) / (pf + pd) +
+#   plot_annotation(tag_levels = "A")  & 
+#   theme(plot.tag = element_text(size = 40))
+# 
+# ggsave("__Submission/Figures/05.GAM-cat.png", ppp, 
+#        height=30, width=22, units="in", dpi=600, bg = "white", limitsize = FALSE)
+# 
+# ### 2nd order
+# 
+# ll2 <- readRDS("02.Data/04.GAM-status-ll2.RDS")
+# 
+# (p1 <- ll2[["PC1"]] |>
+#     filter(fitted < quantile(fitted, 0.95),
+#            fitted > quantile(fitted, 0.05)) %>% 
+#     ggplot(aes(x = PC1, y = fitted, group = rep)) +
+#     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#     geom_line(alpha = 0.05) +
+#     geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#     theme_bw() +
+#     theme(
+#       axis.title.x = element_text(size = 44),
+#       axis.text.x = element_text(size = 40),
+#       axis.title.y = element_text(size = 44),
+#       axis.text.y = element_text(size = 40) ) +
+#     labs(x = "PC1 - Annual precipitation\n(dry to wet)") +
+#     annotate("text", x = -3, y = -0.1, label = "Coupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -3, y = -0.1, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = -3, y = -2.5, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -3, y = -2.5, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = -3, y = 2, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -3, y = 2, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7)
+#   
+# )
+# 
+# (p2 <- ll2[["PC2"]] |>
+#     filter(fitted < quantile(fitted, 0.95),
+#            fitted > quantile(fitted, 0.05)) %>% 
+#     ggplot(aes(x = PC2, y = fitted, group = rep)) +
+#     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#     geom_line(alpha = 0.05) +
+#     geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#     theme_bw() +
+#     theme(
+#       axis.title.x = element_text(size = 44),
+#       axis.text.x = element_text(size = 40),
+#       axis.title.y = element_blank(),
+#       axis.text.y = element_text(size = 40) ) +
+#     labs(x = "PC2 - Temp. coldest\nquarter/month (cold to hot)") +
+#     annotate("text", x = -12.5, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -12.5, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = -12.5, y = -2.5, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -12.5, y = -2.5, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = -12.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -12.5, y = 1.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7)
+# )
+# 
+# 
+# (p5 <- ll2[["PC5"]] |>
+#     filter(fitted < quantile(fitted, 0.95),
+#            fitted > quantile(fitted, 0.05)) %>% 
+#     ggplot(aes(x = PC5, y = fitted, group = rep)) +
+#     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#     geom_line(alpha = 0.05) +
+#     geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#     theme_bw() +
+#     theme(
+#       axis.title.x = element_text(size = 44),
+#       axis.text.x = element_text(size = 40),
+#       axis.title.y = element_text(size = 44),
+#       axis.text.y = element_text(size = 40) ) +
+#     labs(x = "PC5 - Precipitation\nseasonality (low to high)")+
+#     annotate("text", x = -4, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -4, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = -4, y = -2, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -4, y = -2, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = -4, y = 1, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = -4, y = 1, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7) )
+# 
+# 
+# (ps <- ll2[["Stable.clim"]] |>
+#     filter(fitted < quantile(fitted, 0.95),
+#            fitted > quantile(fitted, 0.05)) %>% 
+#     ggplot(aes(x = stable.clim, y = fitted, group = rep)) +
+#     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#     geom_line(alpha = 0.05) +
+#     geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#     theme_bw() +
+#     theme(
+#       axis.title.x = element_text(size = 44),
+#       axis.text.x = element_text(size = 40),
+#       axis.title.y = element_blank(),
+#       axis.text.y = element_text(size = 40) ) +
+#     labs(x = "Climate variability\nafter LGM [°C p.a.]")+
+#     annotate("text", x = 0.5, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = 0.5, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = 0.5, y = -2.5, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = 0.5, y = -2.5, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) +
+#     
+#     annotate("text", x = 0.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+#     annotate("text", x = 0.5, y = 1.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7)
+# )
+# 
+# 
+# pf <- ll2[["Forest"]] |>
+#   mutate(is.forest = ifelse(is.forest == TRUE, "Forest", "Non-Forest")) %>% 
+#   ggplot(aes(x = is.forest, y = fitted, group = rep)) +
+#   #geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+#   geom_point(alpha = 0.05) +
+#   geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_blank(),
+#     axis.text.x = element_text(size = 40, color = "black", vjust = -0.5),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   scale_y_continuous(limits = c(-2, 1.5)) +
+#   annotate("text", x = "Forest", y = -1.5, label = "Coupling", vjust = -0.5, size = 10, hjust = 1) +
+#   annotate("text", x = "Forest", y = -1.5, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7, hjust = 1) +
+#   
+#   annotate("text", x = "Forest", y = -0, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+#   annotate("text", x = "Forest", y = -0, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7, hjust = 1) +
+#   
+#   annotate("text", x = "Forest", y = 1, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+#   annotate("text", x = "Forest", y = 1, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7, hjust = 1)
+# 
+# pp <- ll2[["pv"]] %>% 
+#   filter(Expl == "Dev. expl.") %>% 
+#   ggplot() +
+#   geom_point(aes(x = Expl, y = V1, group = rep), alpha = 0.2) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_blank(),
+#     axis.text.x = element_text(size = 40, color = "black", vjust = -0.5),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(y = "p-value")
+# 
+# devv <- ll2[["pv"]] %>% 
+#   filter(Expl == "Dev. expl.") %>% 
+#   ggplot() +
+#   geom_point(aes(x = Expl, y = V1, group = rep), alpha = 0.2) +
+#   theme_bw() +
+#   theme(
+#     axis.title.x = element_blank(),
+#     axis.text.x = element_blank(),
+#     axis.title.y = element_text(size = 44),
+#     axis.text.y = element_text(size = 40) ) +
+#   labs(y = "Explained deviance", x = "") +
+#   scale_y_continuous(breaks = scales::breaks_pretty())
+# 
+# 
+# style <- "AAAAB"
+# 
+# pd <- pp + devv +
+#   plot_layout(design = style)
+# 
+# ppp <- (p1 + p2) / (p5 + ps) / (pf + pd) +
+#   plot_annotation(tag_levels = "A")  & 
+#   theme(plot.tag = element_text(size = 40))
+# 
+# ggsave("__Submission/Figures/05.GAM-cat1.png", ppp, 
+#        height=30, width=22, units="in", dpi=600, bg = "white", limitsize = FALSE)
+
+### change again
+
+ll3 <- readRDS("02.Data/04.GAM-status-ll3.RDS")
+
+(p1 <- ll3[["PC1"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot(aes(x = PC1, y = fitted, group = rep)) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = min(ll3[["Thresh"]]$threshold), 
+              color = "darkorchid4", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = max(ll3[["Thresh"]]$threshold), 
+              color = "darkcyan", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(alpha = 0.05) +
+    geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      axis.title.y = element_text(size = 44),
+      axis.text.y = element_text(size = 40) ) +
+    labs(x = "PC1 - Annual precipitation\n(dry to wet)", y = "Fit") +
+    annotate("text", x = -3, y = -0.1, label = "Coupling", vjust = -0.5, size = 11, color = "darkcyan")  +
+    annotate("text", x = -3, y = -0.1, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7, color = "darkcyan") +
+    
+    annotate("text", x = -3, y = -2.5, label = "Decoupling", vjust = -0.5, size = 11, color = "darkorchid4") +
+    annotate("text", x = -3, y = -2.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7, color = "darkorchid4") +
+    
+    annotate("text", x = -3, y = 2, label = "Decoupling", vjust = -0.5, size = 11, color = "olivedrab3") +
+    annotate("text", x = -3, y = 2, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7, color = "olivedrab3")
+  
+)
+
+(p2 <- ll3[["PC2"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot(aes(x = PC2, y = fitted, group = rep)) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = min(ll3[["Thresh"]]$threshold), 
+              color = "darkorchid4", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = max(ll3[["Thresh"]]$threshold), 
+              color = "darkcyan", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(alpha = 0.05) +
+    geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      axis.title.y = element_blank(),
+      axis.text.y = element_text(size = 40) ) +
+    labs(x = "PC2 - Temp. coldest\nquarter/month (cold to hot)") 
+    # annotate("text", x = -12.5, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = -12.5, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+    # 
+    # annotate("text", x = -12.5, y = -2.5, label = "Decoupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = -12.5, y = -2.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7) +
+    # 
+    # annotate("text", x = -12.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = -12.5, y = 1.5, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7)
+)
+
+
+(p5 <- ll3[["PC5"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot(aes(x = PC5, y = fitted, group = rep)) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = min(ll3[["Thresh"]]$threshold), 
+              color = "darkorchid4", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = max(ll3[["Thresh"]]$threshold), 
+              color = "darkcyan", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(alpha = 0.05) +
+    geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      axis.title.y = element_text(size = 44),
+      axis.text.y = element_text(size = 40) ) +
+    labs(x = "PC5 - Precipitation\nseasonality (low to high)", y = "Fit")
+    # annotate("text", x = -4, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = -4, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+    # 
+    # annotate("text", x = -4, y = -2, label = "Decoupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = -4, y = -2, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7) +
+    # 
+    # annotate("text", x = -4, y = 1, label = "Decoupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = -4, y = 1, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) 
+  )
+
+
+(ps <- ll3[["Stable.clim"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot(aes(x = stable.clim, y = fitted, group = rep)) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = min(ll3[["Thresh"]]$threshold), 
+              color = "darkorchid4", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = max(ll3[["Thresh"]]$threshold), 
+              color = "darkcyan", fill = NA, linewidth = 3) +
+    geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll3[["Thresh"]]$threshold)+0.01, 
+              ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(alpha = 0.05) +
+    geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    theme_bw() +
+    scale_x_continuous(limits = c(0, 2)) +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      axis.title.y = element_blank(),
+      axis.text.y = element_text(size = 40) ) +
+    labs(x = "Climate variability\nafter LGM [°C p.a.]")
+    # annotate("text", x = 0.5, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = 0.5, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+    # 
+    # annotate("text", x = 0.5, y = -2.5, label = "Decoupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = 0.5, y = -2.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7) +
+    # 
+    # annotate("text", x = 0.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+    # annotate("text", x = 0.5, y = 1.5, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7)
+)
+
+
+(pf <- ll3[["Forest"]] |>
+  mutate(is.forest = ifelse(is.forest == TRUE, "Forest", "Non-Forest")) %>% 
+  ggplot(aes(x = is.forest, y = fitted, group = rep)) +
+  geom_rect(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = min(ll3[["Thresh"]]$threshold), 
+            color = "darkorchid4", fill = NA, linewidth = 3) +
+  geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll3[["Thresh"]]$threshold)+0.01, 
+            ymax = max(ll3[["Thresh"]]$threshold), 
+            color = "darkcyan", fill = NA, linewidth = 3) +
+  geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll3[["Thresh"]]$threshold)+0.01, 
+            ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+  #geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.01) +
+  geom_point(alpha = 0.05) +
+  geom_hline(data = ll3[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+  theme_bw() +
+  labs(y = "Fit") +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(size = 40, color = "black", vjust = -0.5),
+    axis.title.y = element_text(size = 44),
+    axis.text.y = element_text(size = 40) ) +
+  scale_y_continuous(limits = c(-2, 1.5)) 
+  )
+  # annotate("text", x = "Forest", y = -1.5, label = "Coupling", vjust = -0.5, size = 10, hjust = 1) +
+  # annotate("text", x = "Forest", y = -1.5, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7, hjust = 1) +
+  # 
+  # annotate("text", x = "Forest", y = -0, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+  # annotate("text", x = "Forest", y = -0, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7, hjust = 1) +
+  # 
+  # annotate("text", x = "Forest", y = 1, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+  # annotate("text", x = "Forest", y = 1, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7, hjust = 1)
+
+(pp <- ll3[["pv"]] %>% 
+  filter(Expl != "Dev. expl.") %>% 
+  ggplot() +
+  geom_point(aes(x = Expl, y = V1, group = rep), alpha = 0.2) +
+  theme_bw() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_text(size = 40, color = "black", vjust = -0.5),
+    axis.title.y = element_text(size = 44),
+    axis.text.y = element_text(size = 40) ) +
+  labs(y = "p-value") +
+  scale_y_continuous(limits = c(0, 2e-5),
+                     breaks = scales::breaks_pretty())
+)
+
+(devv <- ll3[["pv"]] %>% 
+  filter(Expl == "Dev. expl.") %>% 
+  ggplot() +
+  geom_violin(aes(x = Expl, y = V1), alpha = 0.2) +
+  theme_bw() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.title.y = element_text(size = 44),
+    axis.text.y = element_text(size = 40) ) +
+  labs(y = "Explained deviance", x = "") +
+  scale_y_continuous(limits = c(0.13, 0.15), breaks = c(0.13, 0.14, 0.15)) 
+ # scale_y_continuous(breaks = scales::breaks_pretty())
+)
+
+
+style <- "AAAAB"
+
+pd <- pp + devv +
+  plot_layout(design = style)
+
+ppp <- (p1 + p2) / (p5 + ps) / (pf + devv) +
+  plot_annotation(tag_levels = "A")  & 
+  theme(plot.tag = element_text(size = 40))
+
+ggsave("__Submission/Figures/05.GAM-cat2.png", ppp, 
+       height=30, width=22, units="in", dpi=600, bg = "white", limitsize = FALSE)
+
+
+
+## linear expl
+
+
+ll4 <- readRDS("02.Data/04.GAM-status-ll4.RDS")
+
+ll5 <- readRDS("02.Data/04.GAM-status-ll5.RDS")
+
+(p1 <- ll4[["PC1"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot() +
+    geom_rect(data = data.frame(
+      ymin = c(-Inf, min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold) ), 
+      ymax = c(min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold), Inf), 
+      fill = factor(c("Decoupling with FD < PD", "Coupling with FD ~ PD", "Decoupling with FD > PD"), 
+                    levels = c("Decoupling with FD > PD", "Coupling with FD ~ PD", "Decoupling with FD < PD"))),
+      aes(xmin = -Inf, xmax = Inf, 
+          ymin = ymin, ymax = ymax,
+          fill = fill),
+      alpha = 0.3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = max(ll4[["Thresh"]]$threshold), 
+    #           color = "darkcyan", fill = NA, linewidth = 3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(x = PC1, y = fitted, group = rep, ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(aes(x = PC1, y = fitted, group = rep), alpha = 0.05) +
+    geom_ribbon(data = ll5[["PC1"]], aes(x = PC1, y = fitted, ymin = lower, ymax = upper), alpha = 0.3, color = "darkblue") +
+    geom_line(data = ll5[["PC1"]], aes(x = PC1, y = fitted), color = "darkblue", linewidth = 1.333) +
+    geom_hline(data = ll4[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    geom_hline(data = ll5[["Thresh"]], aes(yintercept = threshold), color = "darkblue", linewidth = 1.3, linetype = 2) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      axis.title.y = element_text(size = 44),
+      axis.text.y = element_text(size = 40),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 40)) +
+    scale_fill_viridis_d(direction = -1) +
+    labs(x = "PC1 - Annual precipitation\n(dry to wet)", y = "Fitted function")
+    # annotate("text", x = -3, y = -0.3, label = "Coupling", vjust = -0.5, size = 11, color = "darkcyan")  +
+    # annotate("text", x = -3, y = -0.3, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7, color = "darkcyan") +
+    # 
+    # annotate("text", x = -3, y = -2.2, label = "Decoupling", vjust = -0.5, size = 11, color = "darkorchid4") +
+    # annotate("text", x = -3, y = -2.2, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7, color = "darkorchid4") +
+    # 
+    # annotate("text", x = -3, y = 1.3, label = "Decoupling", vjust = -0.5, size = 11, color = "olivedrab3") +
+    # annotate("text", x = -3, y = 1.3, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7, color = "olivedrab3")
+  
+)
+
+(p2 <- ll4[["PC2"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot() +
+    geom_rect(data = data.frame(
+      ymin = c(-Inf, min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold) ), 
+      ymax = c(min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold), Inf), 
+      fill = factor(c("Decoupling with FD < PD", "Coupling with FD ~ PD", "Decoupling with FD > PD"), 
+                    levels = c("Decoupling with FD > PD", "Coupling with FD ~ PD", "Decoupling with FD < PD"))),
+      aes(xmin = -Inf, xmax = Inf, 
+          ymin = ymin, ymax = ymax,
+          fill = fill),
+      alpha = 0.3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = max(ll4[["Thresh"]]$threshold), 
+    #           color = "darkcyan", fill = NA, linewidth = 3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(x = PC2, y = fitted, group = rep, ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(aes(x = PC2, y = fitted, group = rep), alpha = 0.05) +
+    geom_ribbon(data = ll5[["PC2"]], aes(x = PC2, y = fitted, ymin = lower, ymax = upper), alpha = 0.3, color = "darkblue") +
+    geom_line(data = ll5[["PC2"]], aes(x = PC2, y = fitted), color = "darkblue", linewidth = 1.333) +
+    geom_hline(data = ll4[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    geom_hline(data = ll5[["Thresh"]], aes(yintercept = threshold), color = "darkblue", linewidth = 1.3, linetype = 2) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      #axis.title.y = element_blank(),
+      axis.text.y = element_text(size = 40),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 40)) +
+    scale_fill_viridis_d(direction = -1) +
+    labs(x = "PC2 - Temp. coldest\nquarter/month (cold to hot)", y = "") 
+  # annotate("text", x = -12.5, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = -12.5, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+  # 
+  # annotate("text", x = -12.5, y = -2.5, label = "Decoupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = -12.5, y = -2.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7) +
+  # 
+  # annotate("text", x = -12.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = -12.5, y = 1.5, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7)
+)
+
+
+(p5 <- ll4[["PC5"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot() +
+    geom_rect(data = data.frame(
+      ymin = c(-Inf, min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold) ), 
+      ymax = c(min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold), Inf), 
+      fill = factor(c("Decoupling with FD < PD", "Coupling with FD ~ PD", "Decoupling with FD > PD"), 
+                    levels = c("Decoupling with FD > PD", "Coupling with FD ~ PD", "Decoupling with FD < PD"))),
+      aes(xmin = -Inf, xmax = Inf, 
+          ymin = ymin, ymax = ymax,
+          fill = fill),
+      alpha = 0.3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = max(ll4[["Thresh"]]$threshold), 
+    #           color = "darkcyan", fill = NA, linewidth = 3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(x = PC5, y = fitted, group = rep, ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(aes(x = PC5, y = fitted, group = rep), alpha = 0.05) +
+    geom_ribbon(data = ll5[["PC5"]], aes(x = PC5, y = fitted, ymin = lower, ymax = upper), alpha = 0.3, color = "darkblue") +
+    geom_line(data = ll5[["PC5"]], aes(x = PC5, y = fitted), color = "darkblue", linewidth = 1.333) +
+    geom_hline(data = ll4[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    geom_hline(data = ll5[["Thresh"]], aes(yintercept = threshold), color = "darkblue", linewidth = 1.3, linetype = 2) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      axis.title.y = element_text(size = 44),
+      axis.text.y = element_text(size = 40),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 40)) +
+    scale_fill_viridis_d(direction = -1) +
+    labs(x = "PC5 - Precipitation\nseasonality (low to high)", y = "Fitted function")
+  # annotate("text", x = -4, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = -4, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+  # 
+  # annotate("text", x = -4, y = -2, label = "Decoupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = -4, y = -2, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7) +
+  # 
+  # annotate("text", x = -4, y = 1, label = "Decoupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = -4, y = 1, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7) 
+)
+
+
+(ps <- ll4[["Stable.clim"]] |>
+    filter(fitted < quantile(fitted, 0.95),
+           fitted > quantile(fitted, 0.05)) %>% 
+    ggplot() +
+    geom_rect(data = data.frame(
+      ymin = c(-Inf, min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold) ), 
+      ymax = c(min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold), Inf), 
+      fill = factor(c("Decoupling with FD < PD", "Coupling with FD ~ PD", "Decoupling with FD > PD"), 
+                    levels = c("Decoupling with FD > PD", "Coupling with FD ~ PD", "Decoupling with FD < PD"))),
+      aes(xmin = -Inf, xmax = Inf, 
+          ymin = ymin, ymax = ymax,
+          fill = fill),
+      alpha = 0.3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = max(ll4[["Thresh"]]$threshold), 
+    #           color = "darkcyan", fill = NA, linewidth = 3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    geom_ribbon(aes(x = stable.clim, y = fitted, group = rep, ymin = lower, ymax = upper), alpha = 0.01) +
+    geom_line(aes(x = stable.clim, y = fitted, group = rep), alpha = 0.05) +
+    geom_ribbon(data = ll5[["Stable.clim"]], aes(x = stable.clim, y = fitted, ymin = lower, ymax = upper), alpha = 0.3, color = "darkblue") +
+    geom_line(data = ll5[["Stable.clim"]], aes(x = stable.clim, y = fitted), color = "darkblue", linewidth = 1.333) +
+    geom_hline(data = ll4[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    geom_hline(data = ll5[["Thresh"]], aes(yintercept = threshold), color = "darkblue", linewidth = 1.3, linetype = 2) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_text(size = 44),
+      axis.text.x = element_text(size = 40),
+      #axis.title.y = element_blank(),
+      axis.text.y = element_text(size = 40),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 40)) +
+    scale_fill_viridis_d(direction = -1) +
+    labs(x = "Climate variability\nafter LGM [°C p.a.]", y = "")
+  # annotate("text", x = 0.5, y = -0, label = "Coupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = 0.5, y = -0, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7) +
+  # 
+  # annotate("text", x = 0.5, y = -2.5, label = "Decoupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = 0.5, y = -2.5, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7) +
+  # 
+  # annotate("text", x = 0.5, y = 1.5, label = "Decoupling", vjust = -0.5, size = 10) +
+  # annotate("text", x = 0.5, y = 1.5, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7)
+)
+
+
+(pf <- ll4[["Forest"]]  %>% 
+    mutate(is.forest = ifelse(is.forest == TRUE, "Forest", "Non-Forest")) %>% 
+    ggplot() +
+    geom_rect(data = data.frame(
+      ymin = c(-Inf, min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold) ), 
+      ymax = c(min(ll4[["Thresh"]]$threshold), max(ll4[["Thresh"]]$threshold), Inf), 
+      fill = factor(c("Decoupling with FD < PD", "Coupling with FD ~ PD", "Decoupling with FD > PD"), 
+                    levels = c("Decoupling with FD > PD", "Coupling with FD ~ PD", "Decoupling with FD < PD"))),
+      aes(xmin = -Inf, xmax = Inf, 
+          ymin = ymin, ymax = ymax,
+          fill = fill),
+      alpha = 0.3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = min(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = max(ll4[["Thresh"]]$threshold), 
+    #           color = "darkcyan", fill = NA, linewidth = 3) +
+    # geom_rect(xmin = -Inf, xmax = Inf, ymin = max(ll4[["Thresh"]]$threshold)+0.01, 
+    #           ymax = Inf, color = "olivedrab3", fill = NA, linewidth = 3) +
+    #geom_ribbon(aes(x = PC1, y = fitted, group = rep, ymin = lower, ymax = upper), alpha = 0.01) +
+    #geom_line(aes(x = PC1, y = fitted, group = rep), alpha = 0.05) +
+    geom_point(aes(x = is.forest, y = fitted, group = rep)) +
+    geom_point(data = ll5[["Forest"]] %>% 
+                 mutate(is.forest = ifelse(is.forest == TRUE, "Forest", "Non-Forest")), 
+               aes(x = is.forest, y = fitted), color = "darkblue", size = 3.666) +
+    geom_hline(data = ll4[["Thresh"]], aes(yintercept = threshold, group = rep), alpha = 0.01) +
+    geom_hline(data = ll5[["Thresh"]], aes(yintercept = threshold), color = "darkblue", linewidth = 1.3, linetype = 2) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 30, color = "black", vjust = 0.2),
+      axis.title.y = element_text(size = 44),
+      axis.text.y = element_text(size = 40),
+      legend.title = element_blank(),
+      legend.text = element_text(size = 40)) +
+    scale_fill_viridis_d(direction = -1) +
+    labs(y = "Fitted function") +
+    scale_y_continuous(limits = c(-2, 1.5)) 
+)
+# annotate("text", x = "Forest", y = -1.5, label = "Coupling", vjust = -0.5, size = 10, hjust = 1) +
+# annotate("text", x = "Forest", y = -1.5, label = expression(paste("with FD" %~~% "PD")), vjust = 0.8, size = 7, hjust = 1) +
+# 
+# annotate("text", x = "Forest", y = -0, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+# annotate("text", x = "Forest", y = -0, label =  expression(paste("with FD"<"PD")), vjust = 0.8, size = 7, hjust = 1) +
+# 
+# annotate("text", x = "Forest", y = 1, label = "Decoupling", vjust = -0.5, size = 10, hjust = 1) +
+# annotate("text", x = "Forest", y = 1, label =  expression(paste("with FD">"PD")), vjust = 0.8, size = 7, hjust = 1)
+
+(pp <- ll4[["pv"]] %>% 
+    filter(Expl != "Dev. expl.") %>% 
+    ggplot() +
+    geom_point(aes(x = Expl, y = V1, group = rep), alpha = 0.2) +
+    geom_point(data = ll5[["pv"]] %>% 
+                 filter(Expl != "Dev. expl."), 
+               aes(x = Expl, y = V1), color = "darkblue", size = 3.666) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_text(size = 40, color = "black", vjust = -0.5),
+      axis.title.y = element_text(size = 34),
+      axis.text.y = element_text(size = 30) ) +
+    labs(y = "p-value") +
+    scale_y_continuous(breaks = scales::breaks_pretty())
+)
+
+(devv <- ll4[["pv"]] %>% 
+    filter(Expl == "Dev. expl.") %>% 
+    ggplot() +
+    geom_violin(aes(x = Expl, y = V1), alpha = 0.2) +
+    geom_point(data = ll5[["pv"]] %>% 
+                 filter(Expl == "Dev. expl."), 
+               aes(x = Expl, y = V1), color = "darkblue", size = 3.666) +
+    theme_bw() +
+    theme(
+      axis.title.x = element_blank(),
+      axis.text.x = element_blank(),
+      axis.title.y = element_text(size = 34),
+      axis.text.y = element_text(size = 30) ) +
+    labs(y = "Expl. deviance", x = "") +
+    scale_y_continuous(breaks = c(0.11, 0.12, 0.13, 0.14, 0.15)) 
+  # scale_y_continuous(breaks = scales::breaks_pretty())
+)
+
+
+style <- "AAAABBB \n AAAABBB \n CCCCDDD \n CCCCDDD
+          EEEEFGG \n EEEEHHH"
+
+ppp <- p1 + p2 + p5 + ps + pf + pp + devv + guide_area() +
+  plot_layout(guides = "collect",
+              design = style) &
+  plot_annotation(tag_levels = "A")  & 
+  theme(plot.tag = element_text(size = 40))
+
+ggsave("__Submission/Figures/05.GAM-cat-lin.png", ppp, 
+       height=30, width=22, units="in", dpi=600, bg = "white", limitsize = FALSE)
+
+ggsave("__Submission/Figures/05.GAM-cat-lin.pdf", ppp, 
+       height=30, width=22, units="in", dpi=600, bg = "white", limitsize = FALSE)

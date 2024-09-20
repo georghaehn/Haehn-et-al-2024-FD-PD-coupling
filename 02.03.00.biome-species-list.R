@@ -1,4 +1,5 @@
 library(tidyverse)
+library(terra)
 
 #load TRY trait data
 load("02.data/Traits_CWMs_sPlot3.RData")
@@ -20,6 +21,91 @@ load("02.Data/DT_sPlot3.0.RData")
 
 DT <- DT2 |> 
   filter(Species %in% species$Species)
+
+## read Floristic - Kingdoms
+
+
+kings <- vect("02.data/shapefiles/kindgoms.shape.shp")
+
+data <- header %>% 
+  filter(!is.na(Longitude))
+
+exf <- terra::extract(kings, data.frame(
+  x = data$Longitude,
+  y = data$Latitude
+))
+
+saveRDS(exf, "kings.exf.RDS")
+
+exf <- readRDS("kings.exf.RDS")
+
+table(exf$cluster)
+sum(is.na(exf$cluster))
+
+dff <- cbind(data, exf$cluster)
+
+dff %>% 
+  filter(is.na(`exf$cluster`)) %>% 
+  pull(Country) %>% 
+  table()
+
+dff %>% 
+  filter(!is.na(`exf$cluster`)) %>% 
+  rename("Cluster" = "exf$cluster") %>% 
+  pull(Cluster) %>% 
+  table()
+
+dff %>% 
+  filter(`exf$cluster`==1) %>% 
+  pull(Country) %>% 
+  table()
+
+countryx <- dff %>% 
+  group_by(`exf$cluster`, Country) %>% 
+  slice_tail() %>% 
+  dplyr::select(`exf$cluster`, Country)
+
+naa <- dff %>% 
+  filter(is.na(`exf$cluster`))
+
+clust <- dff %>% 
+  filter(!is.na(`exf$cluster`))
+
+library(FNN)
+
+matches <- knnx.index(clust[,c("Longitude", "Latitude")], naa[,c("Longitude", "Latitude")], k = 1)
+
+naa$match.row <- matches[,1]
+
+oout <- naa %>% 
+  dplyr::select(-`exf$cluster`) %>%
+  mutate(match.row = as.character(match.row)) %>% 
+  left_join(clust %>% 
+              dplyr::select(Cluster = `exf$cluster`) %>% 
+              rownames_to_column("match.row"),
+            by = "match.row") %>% 
+  dplyr::select(-match.row) %>% 
+  rbind(clust %>% 
+          rename("Cluster" = "exf$cluster") )
+
+oout[,c("Country", "Cluster")] %>% table()
+
+saveRDS(oout, "02.data/phylo-kingdom-data.RDS")
+
+ott <- DT |> 
+  group_by(PlotObservationID, Species) |> 
+  summarise(Abundance_sum = sum(Abundance, na.rm = TRUE)) |> 
+  left_join(
+    oout |> 
+      dplyr::select(PlotObservationID, Phyl.clust = Cluster),
+    by = "PlotObservationID"
+  ) |> 
+  group_by(Phyl.clust, Species) |> 
+  summarise(Abundance_sum = sum(Abundance_sum, na.rm = TRUE),
+            Species_count = n())
+
+saveRDS(ott, "02.Data/species-list-phyl.RDS")
+
 
 ## biomes
 sum(is.na(header$sBiome))

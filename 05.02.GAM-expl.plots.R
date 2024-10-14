@@ -77,6 +77,17 @@ summary(mod.P.PC1)
 
 res.P.PC1 <- residuals.gam(mod.P.PC1, type = "response")
 
+source.f5a <- data.frame(
+  shape = "hex",
+  x = sPlot.data$PC1,
+  y = res.P.PC1
+) %>%
+  bind_rows(
+    data.frame(shape = "line",
+               x = RQEP.PC1.preds$PC1,
+               y = RQEP.PC1.preds$estimate)
+  )
+
 (p.phyl.PC1 <- ggplot() +
   geom_hex(aes(y = res.P.PC1, x = sPlot.data$PC1),
            bins = 40) +
@@ -224,6 +235,17 @@ summary(mod.P.FF)
 
 res.P.FF <- residuals.gam(mod.P.FF, type = "response")
 
+source.f5b <- data.frame(
+  shape = "violin",
+  x = pred.orig.RQEP.new$is.forest,
+  y = res.P.FF
+) %>%
+  bind_rows(
+    data.frame(shape = "line",
+               x = pred.RQEP.for.out$is.forest,
+               y = pred.RQEP.for.out$estimate)
+  )
+
 p.phyl.for <- ggplot() +
   geom_violin(aes(y = res.P.FF, 
                 x = pred.orig.RQEP.new$is.forest), fill = "grey", color = "grey") +
@@ -258,6 +280,20 @@ ggsave("__Submission/Figures/05.GAM.expl.SES.RQEP.BW.png", p.out.RQEP,
 ggsave("__Submission/Figures/05.GAM.expl.SES.RQEP.BW.pdf", p.out.RQEP, 
        height=10, width=25, units="in", dpi=600, bg = "white", limitsize = FALSE)
 
+#save source data
+library("openxlsx")
+
+out <- createWorkbook()
+
+addWorksheet(out, "Fig5A")
+addWorksheet(out, "Fig5B")
+
+writeData(out, sheet = "Fig5A", x = source.f5a)
+writeData(out, sheet = "Fig5B", x = source.f5b)
+
+saveWorkbook(out, file = "__Submission/Source_Figure5.xlsx", overwrite = TRUE)
+
+
 # rm(list = ls())
 # gc()
 #### functional diversity ~ stable clim + recent climate + longlat ----
@@ -286,6 +322,17 @@ RQEF.sc.preds <- predictions(mod.RQEF, newdata = datagrid(
     max(sPlot.data$stable.clim), 
     .1)
 ))
+
+source.f4c <- data.frame(
+  shape = "hex",
+  x = sPlot.data$stable.clim,
+  y = res.F.SC
+) %>%
+  bind_rows(
+    data.frame(shape = "line",
+               x = RQEF.sc.preds$stable.clim,
+               y = RQEF.sc.preds$estimate)
+  )
 
 (p.RQEF.sc <- ggplot() +
  # geom_point(aes(y = pred.orig.RQEF$SES.RQEF-pred.orig.RQEF$predicted, x = pred.orig.RQEF$stable.clim), color = "grey80", alpha = 0.5) +
@@ -326,6 +373,17 @@ mod.F.PC2 <- readRDS("02.data/05.GAM_SES.RQEF.BWexp_7.RDS")
 summary(mod.F.PC2)
 
 res.F.PC2 <- residuals.gam(mod.F.PC2, type = "response")
+
+source.f4a <- data.frame(
+  shape = "hex",
+  x = sPlot.data$PC2,
+  y = res.F.PC2
+) %>%
+  bind_rows(
+    data.frame(shape = "line",
+               x = PC2.preds$PC2,
+               y = PC2.preds$estimate)
+  )
 
 (p.RQEF.PC2 <- ggplot() +
   #geom_point(aes(x = pred.orig.FDis$annual.range.air.temp, y = pred.orig.FDis$SES.FDis), color = "purple4", alpha = 0.01) +
@@ -411,6 +469,18 @@ mod.F.PC5 <- readRDS("02.data/05.GAM_SES.RQEF.BWexp_8.RDS")
 summary(mod.F.PC5)
 
 res.F.PC5 <- residuals.gam(mod.F.PC5, type = "response")
+
+source.f4b <- data.frame(
+  shape = "hex",
+  x = sPlot.data$PC5,
+  y = res.F.PC5
+) %>%
+  bind_rows(
+    data.frame(shape = "line",
+               x = PC5.preds$PC5,
+               y = PC5.preds$estimate)
+  )
+
 (p.RQEF.PC5 <- ggplot() +
   #geom_point(aes(x = pred.orig.FDis$annual.range.air.temp, y = pred.orig.FDis$SES.FDis), color = "purple4", alpha = 0.01) +
   #geom_point(aes(y = pred.orig.RQEF$SES.RQEF-pred.orig.RQEF$predicted, x = pred.orig.RQEF$PC5), color = "grey80", alpha = 0.5) +
@@ -658,6 +728,21 @@ ggsave("__Submission/Figures/05.GAM.expl.SES.RQEF.BW.png", p.out.RQEF,
 ggsave("__Submission/Figures/05.GAM.expl.SES.RQEF.BW.pdf", p.out.RQEF, 
        height=25, width=12, units="in", dpi=600, bg = "white", limitsize = FALSE)
 
+
+#save source data
+
+out <- createWorkbook()
+
+addWorksheet(out, "Fig4A")
+addWorksheet(out, "Fig4B")
+addWorksheet(out, "Fig4C")
+
+writeData(out, sheet = "Fig4A", x = source.f4a)
+writeData(out, sheet = "Fig4B", x = source.f4b)
+writeData(out, sheet = "Fig4C", x = source.f4c)
+
+saveWorkbook(out, file = "__Submission/Source_Figure4.xlsx", overwrite = TRUE)
+
 ## rel log
 
 mod.rel <- readRDS("02.data/05.GAM_rel.log.BW exp_10.RDS")
@@ -677,6 +762,17 @@ mod.rel.PC1 <- readRDS("02.data/05.GAM_rel.log.BW exp_11.RDS")
 summary(mod.rel.PC1)
 
 res.rel.PC1 <- residuals.gam(mod.rel.PC1, type = "response")
+
+source.f6a <- data.frame(
+  shape = "hex",
+  x = sPlot.data$PC1,
+  y = res.rel.PC1
+) %>%
+  bind_rows(
+    data.frame(shape = "line",
+               x = rel.PC1.preds$PC1,
+               y = rel.PC1.preds$estimate)
+  )
 
 (p.rel.PC1 <- ggplot() +
     geom_hex(aes(y = res.rel.PC1, x = sPlot.data$PC1),
@@ -744,6 +840,17 @@ summary(mod.rel.FF)
 
 res.rel.FF <- residuals.gam(mod.rel.FF, type = "response")
 
+source.f6b <- data.frame(
+  shape = "violin",
+  x = pred.orig.rel.new$is.forest,
+  y = res.rel.FF
+) %>%
+  bind_rows(
+    data.frame(shape = "line",
+               x = pred.rel.for.out$is.forest,
+               y = pred.rel.for.out$estimate)
+  )
+
 p.rel.for <- ggplot() +
   geom_violin(aes(y = res.rel.FF, 
                 x = pred.orig.rel.new$is.forest), fill = "grey", color = "grey") +
@@ -785,6 +892,19 @@ ggsave("__Submission/Figures/05.GAM.expl.SES.rel.BW.png", pp.out,
 
 ggsave("__Submission/Figures/05.GAM.expl.SES.rel.BW.pdf", pp.out, 
        height=10, width=25, units="in", dpi=600, bg = "white", limitsize = FALSE)
+
+#save source data
+
+out <- createWorkbook()
+
+addWorksheet(out, "Fig6A")
+addWorksheet(out, "Fig6B")
+
+writeData(out, sheet = "Fig6A", x = source.f6a)
+writeData(out, sheet = "Fig6B", x = source.f6b)
+
+saveWorkbook(out, file = "__Submission/Source_Figure6.xlsx", overwrite = TRUE)
+
 
 ##smooth
 mod.rel.S <- readRDS("02.data/05.GAM_rel.log.BW exp_13.RDS")

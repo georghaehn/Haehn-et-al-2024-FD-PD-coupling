@@ -492,6 +492,9 @@ ggsave(filename = "__Submission/Figures/05.BRT-summary-BW.png", width = 33, heig
 ggsave(filename = "__Submission/Figures/Figure3.pdf",  width = 33, height = 10, 
        units = "in", dpi = 600, ppp)
 
+#save source data
+write.xlsx(BRT.sum, "__Submission/Source_Figure3.xlsx")
+
 #remotes::install_github("njtierney/treezy")
 
 library("treezy")

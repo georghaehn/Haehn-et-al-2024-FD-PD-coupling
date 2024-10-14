@@ -498,3 +498,26 @@ p.out <- out/pp.log +
 
 ggsave("__Submission/Figures/04.map-gam1.png", p.out, height=30, width=20, units="in", dpi=600, bg = "white")
 
+#save source data
+library(openxlsx)
+
+data <- sPlot.data %>%
+  filter(!is.na(SES.RQEP.BW),
+         !is.na(SES.RQEF.BW))
+
+d.RQE.SES <- data.frame(x = data$SES.RQEP.BW,
+                        y = data$SES.RQEF.BW#-pred.FD.PD.SES$predicted
+)
+
+write.csv(grid, "grid_fig1.csv")
+grid.out <- read.csv("grid_fig1.csv", header = FALSE)
+
+out <- createWorkbook()
+
+addWorksheet(out, "Fig1A")
+addWorksheet(out, "Fig1B")
+
+writeData(out, sheet = "Fig1A", x = d.RQE.SES)
+writeData(out, sheet = "Fig1B", x = grid.out)
+
+saveWorkbook(out, file = "__Submission/Source_Figure2.xlsx", overwrite = TRUE)

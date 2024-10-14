@@ -925,8 +925,8 @@ data <- sPlot.data %>%
   filter(!is.na(SES.RQEP.BW),
          !is.na(SES.RQEF.BW))
 
-d.RQE.SES <- data.frame(x = sPlot.data$SES.RQEP,
-                        y = sPlot.data$SES.RQEF#-pred.FD.PD.SES$predicted
+d.RQE.SES <- data.frame(x = data$SES.RQEP.BW,
+                        y = data$SES.RQEF.BW#-pred.FD.PD.SES$predicted
                         )
 
 n <- 1000000

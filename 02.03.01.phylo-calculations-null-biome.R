@@ -3,7 +3,6 @@
 ####packages ----
 suppressPackageStartupMessages(library("tidyverse"))
 suppressPackageStartupMessages(library("tidyr"))
-suppressPackageStartupMessages(library("dplyr"))
 suppressPackageStartupMessages(library("picante"))
 suppressPackageStartupMessages(library("phytools"))
 

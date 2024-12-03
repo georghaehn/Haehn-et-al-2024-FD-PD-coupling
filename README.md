@@ -3,9 +3,11 @@ functional and phylogenetic diversity in plant communities”.
 ================
 03/12/2024
 
-Haehn et al. 2024. “Global decoupling of functional and phylogenetic
-diversity in plant communities”. *Nature Ecology & Evolution* 8 (12).
-<https://doi.org/10.1038/s41559-024-02589-0>.
+Hähn, Georg J. A., Gabriella Damasceno, Esteban Alvarez-Davila, Isabelle
+Aubin, Marijn Bauters, Erwin Bergmeier, Idoia Biurrun, et al. 2024.
+“Global Decoupling of Functional and Phylogenetic Diversity in Plant
+Communities”. *Nature Ecology & Evolution*:
+<https://doi.org/10.1038/s41559-024-02589-0>
 
 ### Executive summary
 

@@ -1,7 +1,11 @@
 Summary of the workflow for Haehn et al. 2024 “Global decoupling of
 functional and phylogenetic diversity in plant communities”.
 ================
-15/04/2024
+03/12/2024
+
+Haehn et al. 2024. “Global decoupling of functional and phylogenetic
+diversity in plant communities”. *Nature Ecology & Evolution* 8 (12).
+<https://doi.org/10.1038/s41559-024-02589-0>.
 
 ### Executive summary
 
@@ -20,8 +24,6 @@ functional and phylogenetic diversity in plant communities”.
     diversity and the results of the models
 
 6.  Evaluate the method
-
-7.  Additional supplementary information
 
 ### About this README
 
